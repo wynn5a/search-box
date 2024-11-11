@@ -19,13 +19,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { Star, StarOff, Trash2, RefreshCw } from "lucide-react"
+import { Star, StarOff, Trash2, RefreshCw, Loader2 } from "lucide-react"
 import type { ClusterConfig } from "@/types/cluster"
 import { eventBus } from "@/lib/events"
 
 export function ClustersList() {
   const [clusters, setClusters] = useState<ClusterConfig[]>([])
   const [loading, setLoading] = useState(true)
+  const [testingCluster, setTestingCluster] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -34,13 +35,14 @@ export function ClustersList() {
       const response = await fetch("/api/clusters")
       if (!response.ok) throw new Error("Failed to fetch clusters")
       const data = await response.json()
-      setClusters(data)
+      setClusters(data.success ? data.data : [])
     } catch (error) {
       toast({
         title: "获取集群列表失败",
         description: "请稍后重试",
         variant: "destructive",
       })
+      setClusters([])
     } finally {
       setLoading(false)
     }
@@ -48,6 +50,13 @@ export function ClustersList() {
 
   useEffect(() => {
     fetchClusters()
+    
+    // 监听集群列表变更事件
+    const unsubscribe = eventBus.subscribe("clusterListChanged", fetchClusters)
+    
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   const setDefaultCluster = async (clusterId: string, isDefault: boolean) => {
@@ -97,6 +106,7 @@ export function ClustersList() {
   }
 
   const testClusterConnection = async (cluster: ClusterConfig) => {
+    setTestingCluster(cluster.id)
     try {
       const response = await fetch("/api/clusters/test", {
         method: "POST",
@@ -122,9 +132,13 @@ export function ClustersList() {
     } catch (error) {
       toast({
         title: "测试连接失败",
-        description: "请稍后重试",
+        description: error instanceof Error && error.message === 'AbortError' 
+          ? "连接超时，请检查网络或集群地址" 
+          : "请稍后重试",
         variant: "destructive",
       })
+    } finally {
+      setTestingCluster(null)
     }
   }
 
@@ -163,7 +177,7 @@ export function ClustersList() {
                 {cluster.username ? "Basic Auth" : "无认证"}
               </TableCell>
               <TableCell>
-                {new Date(cluster.createdAt).toLocaleDateString()}
+                {cluster.createdAt ? new Date(cluster.createdAt).toLocaleDateString() : '-'}
               </TableCell>
               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-end gap-2">
@@ -174,12 +188,17 @@ export function ClustersList() {
                           variant="ghost"
                           size="icon"
                           onClick={() => testClusterConnection(cluster)}
+                          disabled={testingCluster === cluster.id}
                         >
-                          <RefreshCw className="h-4 w-4" />
+                          {testingCluster === cluster.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>测试连接</p>
+                        <p>{testingCluster === cluster.id ? "测试中..." : "测试连接"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

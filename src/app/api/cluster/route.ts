@@ -25,7 +25,7 @@ export async function GET() {
       )
     }
 
-    const client = OpenSearchClient.getInstance(cluster)
+    const client = await OpenSearchClient.getInstance(cluster)
     const [health, stats, nodes] = await Promise.all([
       client.getClusterHealth(),
       client.getClusterStats(),

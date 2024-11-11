@@ -28,14 +28,23 @@ model Query {
 }
 
 model Cluster {
-  id        String   @id @default(cuid())
-  name      String
-  url       String
-  username  String?
-  password  String?
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  url         String
+  username    String?
+  password    String?
+  isDefault   Boolean   @default(false)
+  sshEnabled  Boolean   @default(false)
+  sshHost     String?
+  sshPort     Int?      @default(22)
+  sshUser     String?
+  sshPassword String?
+  sshKeyFile  String?
+  localPort   Int?
+  remoteHost  String?
+  remotePort  Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 enum Role {

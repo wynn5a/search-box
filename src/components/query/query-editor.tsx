@@ -76,13 +76,14 @@ export function QueryEditor({ clusterId }: { clusterId: string }) {
         const response = await fetch(`/api/clusters/${clusterId}/indices`)
         if (!response.ok) throw new Error("Failed to fetch indices")
         const data = await response.json()
-        setIndices(data)
+        setIndices(data.success ? data.data : [])
       } catch (error) {
         toast({
           title: "获取索引列表失败",
           description: "请稍后重试",
           variant: "destructive",
         })
+        setIndices([])
       }
     }
 
@@ -136,8 +137,8 @@ export function QueryEditor({ clusterId }: { clusterId: string }) {
   }
 
   // 将索引分为用户索引和系统索引
-  const userIndices = indices.filter(i => !i.index.startsWith('.'))
-  const systemIndices = indices.filter(i => i.index.startsWith('.'))
+  const userIndices = Array.isArray(indices) ? indices.filter(i => !i.index.startsWith('.')) : []
+  const systemIndices = Array.isArray(indices) ? indices.filter(i => i.index.startsWith('.')) : []
 
   const requestUri = `${index}${path}`
 

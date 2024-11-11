@@ -23,35 +23,6 @@ const QUERY_TEMPLATES = {
   indices: {
     label: "索引操作",
     items: {
-      createIndex: {
-        label: "创建索引",
-        icon: Plus,
-        method: "PUT",
-        path: "/{index}",
-        query: `{
-  "settings": {
-    "number_of_shards": 1,
-    "number_of_replicas": 0
-  },
-  "mappings": {
-    "properties": {
-      "field1": { "type": "text" },
-      "field2": { "type": "keyword" }
-    }
-  }
-}`,
-        description: "创建新的索引，可以指定设置和映射",
-        docs: "https://opensearch.org/docs/latest/api-reference/index-apis/create-index/",
-      },
-      deleteIndex: {
-        label: "删除索引",
-        icon: AlertTriangle,
-        method: "DELETE",
-        path: "/{index}",
-        query: "",
-        description: "删除指定的索引，此操作不可恢复",
-        docs: "https://opensearch.org/docs/latest/api-reference/index-apis/delete-index/",
-      },
       getMapping: {
         label: "查看映射",
         icon: Settings,

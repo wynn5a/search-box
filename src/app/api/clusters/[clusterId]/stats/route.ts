@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { OpenSearchClient } from "@/lib/opensearch"
+import { handleApiRoute } from "@/lib/utils/api-utils"
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ clusterId: string }> }
 ) {
-  try {
+  return handleApiRoute(async () => {
     const cluster = await prisma.cluster.findUnique({
       where: {
         id: (await context.params).clusterId,
@@ -14,24 +14,15 @@ export async function GET(
     })
 
     if (!cluster) {
-      return NextResponse.json(
-        { error: "Cluster not found" },
-        { status: 404 }
-      )
+      throw new Error("Cluster not found")
     }
 
-    const client = OpenSearchClient.getInstance(cluster)
+    const client = await OpenSearchClient.getInstance(cluster)
     const [health, stats] = await Promise.all([
       client.getClusterHealth(),
       client.getClusterStats(),
     ])
 
-    return NextResponse.json({ health, stats })
-  } catch (error) {
-    console.error("Error fetching cluster stats:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch cluster stats" },
-      { status: 500 }
-    )
-  }
+    return { health, stats }
+  })
 } 

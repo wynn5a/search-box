@@ -1,16 +1,37 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { tunnelManager } from "@/lib/tunnel-manager"
+import { ClusterConfig } from "@/types/cluster"
 
-export async function DELETE(request: Request, props: { params: Promise<{ clusterId: string }> }) {
-    const params = await props.params;
+export async function DELETE(
+    request: Request,
+    context: { params: Promise<{ clusterId: string }> }
+) {
     try {
-        const cluster = await prisma.cluster.delete({
+        const cluster = await prisma.cluster.findUnique({
             where: {
-                id: params.clusterId,
+                id: (await context.params).clusterId,
             },
         })
 
-        return NextResponse.json(cluster)
+        if (!cluster) {
+            return NextResponse.json(
+                { error: "Cluster not found" },
+                { status: 404 }
+            )
+        }
+
+        if (cluster.sshEnabled) {
+            await tunnelManager.closeTunnel(cluster.id)
+        }
+
+        await prisma.cluster.delete({
+            where: {
+                id: (await context.params).clusterId,
+            },
+        })
+
+        return NextResponse.json({ success: true })
     } catch (error) {
         console.error("Error deleting cluster:", error)
         return NextResponse.json(

@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle, Server, Database, HardDrive } from 'lucide-react'
-import { ClusterConfig } from '@/types/cluster'
 import { eventBus } from "@/lib/events"
-import { PieChart } from '@/components/ui/pie-chart'
+import { PieChart } from "@/components/ui/pie-chart"
 
 interface ClusterSummary {
   totalClusters: number
@@ -27,7 +26,11 @@ export function ClusterOverview() {
         const response = await fetch('/api/clusters/summary')
         if (!response.ok) throw new Error('Failed to fetch clusters summary')
         const data = await response.json()
-        setSummary(data)
+        if (data.success) {
+          setSummary(data.data)
+        } else {
+          throw new Error(data.error || 'Failed to fetch summary')
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error occurred')
       } finally {
@@ -73,20 +76,19 @@ export function ClusterOverview() {
 
   const formatBytes = (bytes: number) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-    if (bytes === 0) return '0 Byte'
+    if (bytes === 0) return '0 Bytes'
     const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)).toString())
     return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
   }
 
-  const healthData = [
-    { name: '健康', value: summary.healthyClusters, color: '#22c55e' },
-    { name: '异常', value: summary.unhealthyClusters, color: '#ef4444' },
+  const pieData = [
+    { label: '健康', value: summary.healthyClusters, color: '#22c55e' },
+    { label: '异常', value: summary.unhealthyClusters, color: '#ef4444' },
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-5">
-      {/* 左侧指标卡片 */}
-      <div className="flex flex-col gap-4 md:col-span-3">
+    <div className="grid gap-4 grid-cols-5">
+      <div className="col-span-3 grid gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -96,7 +98,7 @@ export function ClusterOverview() {
             <CardDescription>所有已添加的集群数量</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{summary.totalClusters}</p>
+            <p className="text-2xl font-bold">{summary.totalClusters.toLocaleString()}</p>
           </CardContent>
         </Card>
 
@@ -127,34 +129,23 @@ export function ClusterOverview() {
         </Card>
       </div>
 
-      {/* 右侧健康状态饼图 */}
-      <Card className="md:col-span-2">
+      <Card className="col-span-2">
         <CardHeader>
           <CardTitle>集群健康状态分布</CardTitle>
           <CardDescription>集群健康状态统计</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-[200px] w-[200px]">
-              <PieChart
-                data={healthData}
-                width={200}
-                height={200}
-                innerRadius={60}
-                outerRadius={80}
-              />
-            </div>
-            <div className="flex gap-4">
-              {healthData.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span>{item.name}：{item.value}</span>
-                </div>
-              ))}
-            </div>
+        <CardContent className="flex flex-col items-center gap-4">
+          <PieChart data={pieData} width={200} height={200} />
+          <div className="flex gap-6">
+            {pieData.map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <div 
+                  className="h-3 w-3 rounded-full" 
+                  style={{ backgroundColor: item.color }}
+                />
+                <span>{item.label}：{item.value.toLocaleString()}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

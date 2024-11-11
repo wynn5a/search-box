@@ -117,13 +117,14 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
       if (!response.ok) throw new Error("Failed to fetch indices")
       const data = await response.json()
-      setIndices(data)
+      setIndices(Array.isArray(data.data) ? data.data : [])
     } catch (error) {
       toast({
         title: "获取索引列表失败",
         description: "请稍后重试",
         variant: "destructive",
       })
+      setIndices([])
     } finally {
       setLoading(false)
     }
@@ -192,8 +193,8 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
   }
 
   const filteredIndices = indices.filter(index => {
-    if (showHiddenIndices) return true
-    return !index.index.startsWith('.')
+    if (!index || typeof index.index !== 'string') return false
+    return showHiddenIndices ? true : !index.index.startsWith('.')
   })
 
   if (loading) {

@@ -1,40 +1,48 @@
-import { NextResponse } from "next/server"
-import prisma from "@/lib/prisma"
-import { OpenSearchClient } from "@/lib/opensearch"
+import { z } from "zod"
+import { handleApiRoute, validateRequestBody, validateParams } from "@/lib/utils/api-utils"
+import { clusterService } from "@/lib/services/cluster-service"
+import { ApiError } from "@/lib/errors/api-error"
 
-interface RouteParams {
-  clusterId: string
-  indexName: string
-}
+const paramsSchema = z.object({
+  clusterId: z.string().min(1),
+  indexName: z.string().min(1),
+})
 
-async function getClient(clusterId: string) {
-  const cluster = await prisma.cluster.findUnique({
-    where: { id: clusterId },
-  })
+const settingsSchema = z.object({
+  index: z.object({
+    number_of_replicas: z.number().min(0).optional(),
+    refresh_interval: z.string().optional(),
+    blocks: z.object({
+      read_only: z.boolean().optional(),
+      read_only_allow_delete: z.boolean().optional(),
+    }).optional(),
+  }).strict(),
+})
 
-  if (!cluster) {
-    throw new Error("Cluster not found")
-  }
-
-  return OpenSearchClient.getInstance(cluster)
-}
+type IndexSettings = z.infer<typeof settingsSchema>
 
 export async function PUT(
   request: Request,
-  context: { params: Promise<RouteParams> }
+  context: { params: Promise<{ clusterId: string; indexName: string }> }
 ) {
-  try {
-    const { clusterId, indexName } = await context.params
+  return handleApiRoute(async () => {
+    const params = validateParams(paramsSchema, (await context.params))
     const body = await request.json()
-    const client = await getClient(clusterId)
-    
-    await client.updateIndexSettings(indexName, body)
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error updating index settings:", error)
-    return NextResponse.json(
-      { error: "Failed to update index settings" },
-      { status: 500 }
+    const settings = validateRequestBody<IndexSettings>(
+      settingsSchema,
+      body,
+      'Invalid index settings'
     )
-  }
+    
+    const client = await clusterService.getOpenSearchClient(params.clusterId)
+    await client.updateIndexSettings(params.indexName, settings)
+    
+    return {
+      message: `Successfully updated settings for index ${params.indexName}`,
+      index: params.indexName,
+    }
+  }, {
+    successMessage: 'Index settings updated successfully',
+    errorMessage: 'Failed to update index settings'
+  });
 } 
