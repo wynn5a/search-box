@@ -13,6 +13,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -27,6 +37,7 @@ export function ClustersList() {
   const [clusters, setClusters] = useState<ClusterConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [testingCluster, setTestingCluster] = useState<string | null>(null)
+  const [clusterToDelete, setClusterToDelete] = useState<ClusterConfig | null>(null)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -81,18 +92,21 @@ export function ClustersList() {
   }
 
   const deleteCluster = async (cluster: ClusterConfig) => {
-    if (!confirm("确定要删除这个集群配置吗？")) return
-
     try {
       const response = await fetch(`/api/clusters/${cluster.id}`, {
         method: "DELETE",
       })
       if (!response.ok) throw new Error("Failed to delete cluster")
-      await fetchClusters()
+      
       toast({
         title: "集群已删除",
         description: "集群配置已成功删除",
       })
+      
+      // 刷新列表
+      fetchClusters()
+      
+      // 如果删除的是默认集群，触发事件
       if (cluster.isDefault) {
         eventBus.emit("clusterDefaultChanged")
       }
@@ -102,6 +116,8 @@ export function ClustersList() {
         description: "请稍后重试",
         variant: "destructive",
       })
+    } finally {
+      setClusterToDelete(null)
     }
   }
 
@@ -147,105 +163,130 @@ export function ClustersList() {
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">状态</TableHead>
-            <TableHead>名称</TableHead>
-            <TableHead>地址</TableHead>
-            <TableHead>认证方式</TableHead>
-            <TableHead className="w-[150px]">添加时间</TableHead>
-            <TableHead className="text-right">操作</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {clusters.map((cluster) => (
-            <TableRow 
-              key={cluster.id}
-              className="cursor-pointer"
-              onClick={() => router.push(`/clusters/${cluster.id}`)}
-            >
-              <TableCell>
-                {cluster.isDefault ? (
-                  <Badge>默认</Badge>
-                ) : null}
-              </TableCell>
-              <TableCell className="font-medium">{cluster.name}</TableCell>
-              <TableCell>{cluster.url}</TableCell>
-              <TableCell>
-                {cluster.username ? "Basic Auth" : "无认证"}
-              </TableCell>
-              <TableCell>
-                {cluster.createdAt ? new Date(cluster.createdAt).toLocaleDateString() : '-'}
-              </TableCell>
-              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                <div className="flex justify-end gap-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => testClusterConnection(cluster)}
-                          disabled={testingCluster === cluster.id}
-                        >
-                          {testingCluster === cluster.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{testingCluster === cluster.id ? "测试中..." : "测试连接"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDefaultCluster(cluster.id, cluster.isDefault)}
-                        >
-                          {cluster.isDefault ? (
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          ) : (
-                            <StarOff className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{cluster.isDefault ? "当前为默认集群" : "设默认集群"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteCluster(cluster)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>删除集群</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableCell>
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">状态</TableHead>
+              <TableHead>名称</TableHead>
+              <TableHead>地址</TableHead>
+              <TableHead>认证方式</TableHead>
+              <TableHead className="w-[150px]">添加时间</TableHead>
+              <TableHead className="text-right">操作</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {clusters.map((cluster) => (
+              <TableRow 
+                key={cluster.id}
+                className="cursor-pointer"
+                onClick={() => router.push(`/clusters/${cluster.id}`)}
+              >
+                <TableCell>
+                  {cluster.isDefault ? (
+                    <Badge>默认</Badge>
+                  ) : null}
+                </TableCell>
+                <TableCell className="font-medium">{cluster.name}</TableCell>
+                <TableCell>{cluster.url}</TableCell>
+                <TableCell>
+                  {cluster.username ? "Basic Auth" : "无认证"}
+                </TableCell>
+                <TableCell>
+                  {cluster.createdAt ? new Date(cluster.createdAt).toLocaleDateString() : '-'}
+                </TableCell>
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-end gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => testClusterConnection(cluster)}
+                            disabled={testingCluster === cluster.id}
+                          >
+                            {testingCluster === cluster.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{testingCluster === cluster.id ? "测试中..." : "测试连接"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDefaultCluster(cluster.id, cluster.isDefault)}
+                          >
+                            {cluster.isDefault ? (
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            ) : (
+                              <StarOff className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{cluster.isDefault ? "当前为默认集群" : "设为默认集群"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setClusterToDelete(cluster)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>删除集群</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <AlertDialog 
+        open={!!clusterToDelete} 
+        onOpenChange={() => setClusterToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除集群</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除集群 "{clusterToDelete?.name}" 吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clusterToDelete && deleteCluster(clusterToDelete)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 } 

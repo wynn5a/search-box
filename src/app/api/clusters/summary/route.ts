@@ -1,6 +1,5 @@
 import { handleApiRoute } from "@/lib/utils/api-utils"
 import { clusterService } from "@/lib/services/cluster-service"
-import { ApiError } from "@/lib/errors/api-error"
 import { NextResponse } from 'next/server'
 
 interface ClusterSummary {
@@ -16,31 +15,42 @@ export async function GET(): Promise<NextResponse> {
     const clusters = await clusterService.getAllClusters()
     
     let totalIndices = 0
+    let totalStorage = 0
     let healthyClusters = 0
     let unhealthyClusters = 0
-    let totalStorage = 0
 
-    await Promise.all(clusters.map(async (cluster) => {
-      try {
-        const client = await clusterService.getOpenSearchClient(cluster.id)
-        const [health, stats] = await Promise.all([
-          client.getClusterHealth(),
-          client.getClusterStats(),
-        ])
+    clusters.forEach(cluster => {
+      // 计算索引总数
+      if (cluster.stats?.indices?.count) {
+        totalIndices += cluster.stats.indices.count
+      }
 
-        if (health.status === 'green' || health.status === 'yellow') {
-          healthyClusters++
-        } else {
-          unhealthyClusters++
-        }
+      // 计算存储空间
+      if (cluster.stats?.indices?.store?.size_in_bytes) {
+        totalStorage += cluster.stats.indices.store.size_in_bytes
+      }
 
-        totalIndices += stats.indices.count || 0
-        totalStorage += stats.indices.store?.size_in_bytes || 0
-      } catch (error) {
-        console.error(`Error fetching cluster ${cluster.name} stats:`, error)
+      // 计算健康状态
+      if (cluster.health?.status === 'green' || cluster.health?.status === 'yellow') {
+        healthyClusters++
+      } else {
         unhealthyClusters++
       }
-    }))
+    })
+
+    // 打印调试信息
+    console.log('Summary calculation:', {
+      clusters: clusters.map(c => ({
+        name: c.name,
+        indices: c.stats?.indices?.count,
+        storage: c.stats?.indices?.store?.size_in_bytes,
+        health: c.health?.status
+      })),
+      totalIndices,
+      totalStorage,
+      healthyClusters,
+      unhealthyClusters
+    })
 
     return {
       totalClusters: clusters.length,

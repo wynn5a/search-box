@@ -23,6 +23,11 @@ export async function GET(
       client.getClusterStats(),
     ])
 
-    return { health, stats }
+    return {
+      name: cluster.name,
+      version: stats.nodes?.versions?.[0] || 'unknown',
+      health,
+      stats,
+    }
   })
 } 

@@ -30,7 +30,7 @@ export async function GET(
   return handleApiRoute(async () => {
     const client = await clusterService.getOpenSearchClient((await context.params).clusterId)
     const indices = await client.listIndices()
-    return Array.isArray(indices) ? indices : []
+    return indices || []
   });
 }
 

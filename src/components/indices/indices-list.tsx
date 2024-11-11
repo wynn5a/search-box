@@ -117,7 +117,11 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
       if (!response.ok) throw new Error("Failed to fetch indices")
       const data = await response.json()
-      setIndices(Array.isArray(data.data) ? data.data : [])
+      if (data.success && Array.isArray(data.data)) {
+        setIndices(data.data)
+      } else {
+        setIndices([])
+      }
     } catch (error) {
       toast({
         title: "获取索引列表失败",

@@ -30,17 +30,12 @@ class OpenSearchClient {
       } : undefined,
       ssl: {
         rejectUnauthorized: false,
-        enabled: nodeUrl.startsWith('https'),
-        checkServerIdentity: () => undefined,
       },
       requestTimeout: 30000,
       sniffOnStart: false,
       sniffOnConnectionFault: false,
       resurrectStrategy: 'ping',
       maxRetries: 3,
-      keepAlive: true,
-      keepAliveInterval: 10000,
-      suggestCompression: true,
       compression: 'gzip',
     })
   }
@@ -199,27 +194,45 @@ class OpenSearchClient {
       const response = await this.client.cluster.health()
       return {
         status: response.body?.status ?? 'red',
+        cluster_name: response.body?.cluster_name ?? 'unknown',
         number_of_nodes: response.body?.number_of_nodes ?? 0,
         active_shards: response.body?.active_shards ?? 0,
         relocating_shards: response.body?.relocating_shards ?? 0,
         initializing_shards: response.body?.initializing_shards ?? 0,
         unassigned_shards: response.body?.unassigned_shards ?? 0,
+        version: response.body?.version ?? 'unknown',
       }
     }, 'Failed to get cluster health')
   }
 
   public async getClusterStats() {
     return this.withRetry(async () => {
-      const response = await this.client.cluster.stats()
+      const [stats, indices] = await Promise.all([
+        this.client.cluster.stats(),
+        this.client.cat.indices({ format: 'json', bytes: 'b' })
+      ])
+
+      // 计算所有索引的总文档数和存储大小
+      const totalDocs = Array.isArray(indices.body) ? 
+        indices.body.reduce((sum, index) => sum + (parseInt(index['docs.count'] || '0')), 0) : 0
+      
+      const totalSize = Array.isArray(indices.body) ?
+        indices.body.reduce((sum, index) => sum + (parseInt(index['store.size'] || '0')), 0) : 0
+
       return {
         indices: {
-          count: response.body?.indices?.count ?? 0,
+          count: stats.body?.indices?.count ?? 0,
           docs: {
-            count: response.body?.indices?.docs?.count ?? 0,
+            count: totalDocs,
           },
           store: {
-            size_in_bytes: response.body?.indices?.store?.size_in_bytes ?? 0,
+            size_in_bytes: totalSize,
+            total_data_set_size_in_bytes: totalSize,
           },
+        },
+        nodes: stats.body?.nodes ?? {
+          count: 0,
+          versions: [],
         },
       }
     }, 'Failed to get cluster stats')
