@@ -35,6 +35,6 @@ OpenSearch Manager is a modern web interface for managing and monitoring multipl
 2. Install dependencies
 3. Run the development server
 
-```bash
-yarn dev
-```
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

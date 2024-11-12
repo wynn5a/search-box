@@ -1,31 +1,39 @@
-import { handleApiRoute } from '@/lib/utils/api-utils'
-import { indexService } from '@/lib/services/index-service'
-import { ApiError } from '@/lib/errors/api-error'
+import { NextResponse } from "next/server"
+import { clusterService } from "@/lib/services/cluster-service"
+import { handleApiRoute } from "@/lib/utils/api-utils"
+import { z } from "zod"
+
+const querySchema = z.object({
+  method: z.enum(["GET", "POST", "PUT", "DELETE"]),
+  path: z.string(),
+  query: z.string().optional(),
+})
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ clusterId: string }> }
+  context: { params: { clusterId: string } }
 ) {
   return handleApiRoute(async () => {
     const body = await request.json()
-    
-    let queryBody = body.query
-    if (typeof queryBody === 'string' && body.method !== 'GET') {
+    const { method, path, query } = querySchema.parse(body)
+
+    const client = await clusterService.getOpenSearchClient(context.params.clusterId)
+
+    let queryBody
+    if (query && method !== 'GET') {
       try {
-        queryBody = JSON.parse(queryBody)
+        queryBody = JSON.parse(query)
       } catch (e) {
-        throw ApiError.badRequest('Invalid JSON query')
+        throw new Error("Invalid JSON in query body")
       }
     }
 
-    return indexService.executeQuery(
-      (await context.params).clusterId,
-      {
-        index: body.index,
-        method: body.method,
-        path: body.path,
-        body: queryBody,
-      }
-    )
+    const response = await client.executeQuery({
+      method,
+      path,
+      body: queryBody,
+    })
+
+    return response
   })
 } 

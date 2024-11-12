@@ -100,59 +100,37 @@ class OpenSearchClient {
   }
 
   public async executeQuery(params: { 
-    index: string, 
     method: string, 
     path: string, 
     body?: any 
   }) {
     return this.withRetry(async () => {
-      // 处理特殊的 API 路径
-      switch (params.path) {
-        case '/_mapping':
-          const mappingResponse = await this.client.indices.getMapping({
-            index: params.index
-          })
-          return mappingResponse.body[params.index]
+      const { method, path, body } = params
 
-        case '/_settings':
-          const settingsResponse = await this.client.indices.getSettings({
-            index: params.index,
-            include_defaults: true
-          })
-          return settingsResponse.body[params.index]
+      // 移除路径开头的斜杠
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path
 
-        case '/_stats':
-          const statsResponse = await this.client.indices.stats({
-            index: params.index
+      // 根据不同的 API 路径处理请求
+      switch (cleanPath) {
+        case '_search':
+        case `${cleanPath}/_search`:
+          return await this.client.search({
+            index: cleanPath !== '_search' ? cleanPath.split('/')[0] : undefined,
+            body
           })
-          return statsResponse.body.indices[params.index]
 
-        case '/_search':
-          return await this.client.search({ 
-            index: params.index,
-            body: params.body
-          })
+        case '_mapping':
+          return await this.client.indices.getMapping()
+
+        case '_settings':
+          return await this.client.indices.getSettings()
 
         default:
-          if (params.path.startsWith('/_doc/')) {
-            const id = params.path.replace('/_doc/', '')
-            switch (params.method) {
-              case 'GET':
-                return await this.client.get({ index: params.index, id })
-              case 'DELETE':
-                return await this.client.delete({ index: params.index, id })
-              case 'PUT':
-                return await this.client.index({ 
-                  index: params.index,
-                  id,
-                  body: params.body
-                })
-            }
-          }
-          // 默认执行搜索
-          return await this.client.search({ 
-            index: params.index,
-            body: params.body
+          // 对于其他请求，使用低级 API
+          return await this.client.transport.request({
+            method,
+            path: `/${cleanPath}`,
+            body,
           })
       }
     }, 'Failed to execute query')
