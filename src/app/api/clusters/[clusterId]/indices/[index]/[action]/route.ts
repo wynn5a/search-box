@@ -4,7 +4,7 @@ import { OpenSearchClient } from "@/lib/opensearch"
 
 interface RouteParams {
     clusterId: string
-    indexName: string
+    index: string
     action: string
 }
 
@@ -24,16 +24,16 @@ export async function POST(
     request: Request,
     context: { params: Promise<RouteParams> }
 ) {
-    const { clusterId, indexName, action } = await context.params
+    const { clusterId, index, action } = await context.params
     try {
         const client = await getClient(clusterId)
 
         switch (action) {
             case "open":
-                await client.openIndex(indexName)
+                await client.openIndex(index)
                 break
             case "close":
-                await client.closeIndex(indexName)
+                await client.closeIndex(index)
                 break
             default:
                 return NextResponse.json(

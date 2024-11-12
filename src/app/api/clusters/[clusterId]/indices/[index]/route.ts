@@ -4,7 +4,7 @@ import { OpenSearchClient } from "@/lib/opensearch"
 
 interface RouteParams {
   clusterId: string
-  indexName: string
+  index: string
 }
 
 async function getClient(clusterId: string) {
@@ -25,9 +25,9 @@ export async function DELETE(
   context: { params: Promise<RouteParams> }
 ) {
   try {
-    const { clusterId, indexName } = await context.params
+    const { clusterId, index } = await context.params
     const client = await getClient(clusterId)
-    await client.deleteIndex(indexName)
+    await client.deleteIndex(index)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error deleting index:", error)
@@ -44,11 +44,11 @@ export async function GET(
   context: { params: Promise<RouteParams> }
 ) {
   try {
-    const { clusterId, indexName } = await context.params
+    const { clusterId, index } = await context.params
     const client = await getClient(clusterId)
-    const settings = await client.getIndexSettings(indexName)
-    const mappings = await client.getIndexMappings(indexName)
-    const stats = await client.getIndexStats(indexName)
+    const settings = await client.getIndexSettings(index)
+    const mappings = await client.getIndexMappings(index)
+    const stats = await client.getIndexStats(index)
 
     return NextResponse.json({
       settings,

@@ -4,52 +4,52 @@ import { useState, useCallback } from "react"
 import { QueryEditor } from "./query-editor"
 import { QueryHistory } from "./query-history"
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable"
-import { HttpMethod, QueryHistoryItem } from "@/types/query"
-
-interface StorageState {
-  showHistory: boolean
-  historySize: number
-}
+import { QueryHistoryItem } from "@/types/query"
 
 export function QueryWorkspace({ clusterId }: { clusterId: string }) {
   const [showHistory, setShowHistory] = useState(() => {
-    if (typeof window !== 'undefined') {
+    try {
       const saved = localStorage.getItem(`query-history-visible-${clusterId}`)
       return saved ? JSON.parse(saved) : true
+    } catch {
+      return true
     }
-    return true
   })
 
   const [historySize, setHistorySize] = useState(() => {
-    if (typeof window !== 'undefined') {
+    try {
       const saved = localStorage.getItem(`query-history-size-${clusterId}`)
       return saved ? JSON.parse(saved) : 20
+    } catch {
+      return 20
     }
-    return 20
   })
 
   const [selectedQuery, setSelectedQuery] = useState<QueryHistoryItem | null>(null)
-  const [historyKey] = useState(`query-history-${clusterId}`)
 
   const handleHistoryItemClick = useCallback((item: QueryHistoryItem) => {
-    if (isValidHttpMethod(item.method)) {
-      setSelectedQuery({
-        ...item,
-        method: item.method
-      })
-    }
+    setSelectedQuery(item)
   }, [])
 
   const handleQueryExecuted = useCallback((query: QueryHistoryItem) => {
-    const saved = localStorage.getItem(historyKey)
-    const history = saved ? JSON.parse(saved) : []
-    localStorage.setItem(historyKey, JSON.stringify([query, ...history].slice(0, 50)))
-  }, [historyKey])
+    try {
+      const key = `query-history-${clusterId}`
+      const saved = localStorage.getItem(key)
+      const history = saved ? JSON.parse(saved) : []
+      localStorage.setItem(key, JSON.stringify([query, ...history].slice(0, 50)))
+    } catch (error) {
+      console.error('Failed to save query history:', error)
+    }
+  }, [clusterId])
 
   const handleToggleHistory = useCallback(() => {
     setShowHistory((prev: boolean) => {
       const newValue = !prev
-      localStorage.setItem(`query-history-visible-${clusterId}`, JSON.stringify(newValue))
+      try {
+        localStorage.setItem(`query-history-visible-${clusterId}`, JSON.stringify(newValue))
+      } catch (error) {
+        console.error('Failed to save history visibility:', error)
+      }
       return newValue
     })
   }, [clusterId])
@@ -57,14 +57,14 @@ export function QueryWorkspace({ clusterId }: { clusterId: string }) {
   const handlePanelResize = useCallback((sizes: number[]) => {
     if (sizes[0]) {
       const newSize = sizes[0]
-      localStorage.setItem(`query-history-size-${clusterId}`, JSON.stringify(newSize))
+      try {
+        localStorage.setItem(`query-history-size-${clusterId}`, JSON.stringify(newSize))
+      } catch (error) {
+        console.error('Failed to save history size:', error)
+      }
       setHistorySize(newSize)
     }
   }, [clusterId])
-
-  const isValidHttpMethod = (method: string): method is HttpMethod => {
-    return ['GET', 'POST', 'PUT', 'DELETE'].includes(method)
-  }
 
   return (
     <div className="h-full">

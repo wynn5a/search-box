@@ -106,32 +106,24 @@ class OpenSearchClient {
   }) {
     return this.withRetry(async () => {
       const { method, path, body } = params
+      console.log('Executing query:', { method, path, body })
 
       // 移除路径开头的斜杠
       const cleanPath = path.startsWith('/') ? path.slice(1) : path
 
-      // 根据不同的 API 路径处理请求
-      switch (cleanPath) {
-        case '_search':
-        case `${cleanPath}/_search`:
-          return await this.client.search({
-            index: cleanPath !== '_search' ? cleanPath.split('/')[0] : undefined,
-            body
-          })
+      try {
+        // 使用低级 API 直接发送请求
+        const response = await this.client.transport.request({
+          method,
+          path: `/${cleanPath}`,
+          body,
+        })
 
-        case '_mapping':
-          return await this.client.indices.getMapping()
-
-        case '_settings':
-          return await this.client.indices.getSettings()
-
-        default:
-          // 对于其他请求，使用低级 API
-          return await this.client.transport.request({
-            method,
-            path: `/${cleanPath}`,
-            body,
-          })
+        console.log('Query response:', response)
+        return response.body
+      } catch (error) {
+        console.error('Query error:', error)
+        throw error
       }
     }, 'Failed to execute query')
   }
@@ -317,6 +309,86 @@ class OpenSearchClient {
       })
       return response.body
     }, 'Failed to get index stats')
+  }
+
+  public async getIndexMapping(indexName: string) {
+    return this.withRetry(async () => {
+      console.log('Getting mapping for index:', indexName)
+      const response = await this.client.indices.getMapping({
+        index: indexName
+      })
+      console.log('Mapping response:', response.body)
+      const mapping = response.body[indexName]?.mappings?.properties
+      if (!mapping) {
+        console.log('No mapping found, using empty mapping')
+        return {}
+      }
+
+      // 忽略 _ 开头的字段
+      return Object.fromEntries(
+        Object.entries(mapping).filter(([key]) => !key.startsWith('_'))
+      )
+    }, 'Failed to get index mapping')
+  }
+
+  // 根据 mapping 生成示例文档
+  private generateDocumentTemplate(mapping: Record<string, any>): Record<string, any> {
+    console.log('Generating template from mapping:', mapping)
+    const template: Record<string, any> = {}
+    
+    for (const [field, config] of Object.entries(mapping)) {
+      if (config.type === 'object' && config.properties) {
+        template[field] = this.generateDocumentTemplate(config.properties)
+      } else if (config.type === 'nested' && config.properties) {
+        template[field] = [this.generateDocumentTemplate(config.properties)]
+      } else {
+        // 根据字段类型生成示例值
+        switch (config.type) {
+          case 'text':
+          case 'keyword':
+            template[field] = `示例${field}`
+            break
+          case 'long':
+          case 'integer':
+          case 'short':
+          case 'byte':
+            template[field] = 0
+            break
+          case 'double':
+          case 'float':
+            template[field] = 0.0
+            break
+          case 'boolean':
+            template[field] = false
+            break
+          case 'date':
+            template[field] = new Date().toISOString()
+            break
+          default:
+            template[field] = null
+        }
+      }
+    }
+
+    console.log('Generated template:', template)
+    return template
+  }
+
+  public async generateIndexTemplate(indexName: string) {
+    try {
+      const mapping = await this.getIndexMapping(indexName)
+      const template = this.generateDocumentTemplate(mapping)
+      return {
+        success: true,
+        data: template
+      }
+    } catch (error) {
+      console.error('Failed to generate template:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate template'
+      }
+    }
   }
 }
 

@@ -41,18 +41,116 @@ export function QueryResults({
     return path.split('.').reduce((current, key) => current?.[key], obj)
   }
 
-  if (!result) {
+  // 获取所有字段，包括嵌套字段
+  const getFields = (obj: any, prefix = ''): string[] => {
+    return Object.entries(obj).flatMap(([key, value]) => {
+      const currentPath = prefix ? `${prefix}.${key}` : key
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return getFields(value, currentPath)
+      }
+      return [currentPath]
+    })
+  }
+
+  // 渲染表格内容
+  const renderTable = () => {
+    // 如果是搜索结果
+    if (result?.hits?.hits) {
+      const hits = result.hits.hits
+      if (hits.length === 0) {
+        return (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">无匹配结果</p>
+          </div>
+        )
+      }
+
+      const firstHit = hits[0]
+      if (!firstHit._source) {
+        return (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground">文档内容为空</p>
+          </div>
+        )
+      }
+
+      const fields = getFields(firstHit._source)
+
+      return (
+        <ScrollArea className="h-full">
+          <div className="p-4">
+            <div className="mb-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4">
+                <span>总命中: {result.hits.total?.value || 0}</span>
+                <span>显示: {hits.length} 条</span>
+              </div>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">文档ID</TableHead>
+                  <TableHead className="w-[80px]">得分</TableHead>
+                  {fields.map((field) => (
+                    <TableHead key={field}>{field}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {hits.map((hit) => (
+                  <TableRow key={hit._id}>
+                    <TableCell className="font-medium">{hit._id}</TableCell>
+                    <TableCell>{hit._score?.toFixed(2) || '-'}</TableCell>
+                    {fields.map((field) => (
+                      <TableCell key={field}>
+                        {formatValue(getNestedValue(hit._source, field))}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
+      )
+    }
+
+    // 如果是插入/更新文档的结果
+    if (result?._id) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-green-500 font-medium mb-2">操作成功</p>
+            <p className="text-sm text-muted-foreground">文档 ID: {result._id}</p>
+            {result.result && (
+              <p className="text-sm text-muted-foreground mt-1">
+                结果: {result.result}
+              </p>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // 其他类型的结果
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">执行查询以查看结果</p>
+        <p className="text-muted-foreground">请切换到 JSON 视图查看完整结果</p>
       </div>
     )
   }
 
+  if (!result) {
+    return (
+      <Card className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">执行查询以查看结果</p>
+      </Card>
+    )
+  }
+
   return (
-    <Card className="flex flex-col h-full min-h-0">
-      <Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as "json" | "table")} className="flex-1 flex flex-col">
-        <div className="border-b px-4 flex-shrink-0 flex items-center justify-between">
+    <Card className="flex flex-col h-full">
+      <Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as "json" | "table")} className="flex flex-col h-full">
+        <div className="border-b px-4 flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="json" className="gap-2">
               <FileJson className="h-4 w-4" />
@@ -99,80 +197,21 @@ export function QueryResults({
             </Button>
           </div>
         </div>
-        <div className="flex-1 min-h-0 overflow-auto">
-          <TabsContent value={viewMode} className="h-full m-0 p-0">
-            {renderResults()}
+        <div className="flex-1 overflow-hidden">
+          <TabsContent value="json" className="h-full m-0">
+            <ScrollArea className="h-full">
+              <div className="p-4">
+                <pre className="whitespace-pre-wrap break-words">
+                  {JSON.stringify(result, null, 2)}
+                </pre>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="table" className="h-full m-0">
+            {renderTable()}
           </TabsContent>
         </div>
       </Tabs>
     </Card>
   )
-
-  function renderResults() {
-    if (viewMode === 'json') {
-      return (
-        <ScrollArea className="h-full w-full">
-          <div className="p-4">
-            <pre className="whitespace-pre-wrap break-words">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        </ScrollArea>
-      )
-    }
-
-    if (!result?.hits?.hits?.length) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground">无匹配结果</p>
-        </div>
-      )
-    }
-
-    const hits = result.hits.hits
-    const getFields = (obj: any, prefix = ''): string[] => {
-      return Object.entries(obj).flatMap(([key, value]) => {
-        const currentPath = prefix ? `${prefix}.${key}` : key
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-          return getFields(value, currentPath)
-        }
-        return [currentPath]
-      })
-    }
-
-    const columns = Array.from(
-      new Set(hits.flatMap(hit => getFields(hit._source)))
-    ).sort()
-
-    return (
-      <ScrollArea className="h-full w-full">
-        <div className="p-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">文档ID</TableHead>
-                <TableHead className="w-[80px]">得分</TableHead>
-                {columns.map((column) => (
-                  <TableHead key={column}>{column}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {hits.map((hit) => (
-                <TableRow key={hit._id}>
-                  <TableCell className="font-medium">{hit._id}</TableCell>
-                  <TableCell>{hit._score?.toFixed(2) || '-'}</TableCell>
-                  {columns.map((column) => (
-                    <TableCell key={column}>
-                      {formatValue(getNestedValue(hit._source, column))}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </ScrollArea>
-    )
-  }
 } 

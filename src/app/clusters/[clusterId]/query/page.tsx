@@ -1,16 +1,15 @@
 import { ClusterBreadcrumb } from "@/components/cluster/cluster-breadcrumb"
-import { QueryWorkspace } from "@/components/query/query-workspace"
+import { QueryWorkspaceWrapper } from "@/components/query/query-workspace-wrapper"
 
-export default function QueryPage({ params }: { params: { clusterId: string } }) {
+export default async function QueryPage(props: { params: Promise<{ clusterId: string }> }) {
+  const params = await props.params;
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-6 p-6">
-        <div className="flex items-center justify-between">
-          <ClusterBreadcrumb clusterId={params.clusterId} currentPage="数据查询" />
-        </div>
+        <ClusterBreadcrumb clusterId={params.clusterId} currentPage="数据查询" />
       </div>
       <div className="flex-1 border-t">
-        <QueryWorkspace clusterId={params.clusterId} />
+        <QueryWorkspaceWrapper clusterId={params.clusterId} />
       </div>
     </div>
   )

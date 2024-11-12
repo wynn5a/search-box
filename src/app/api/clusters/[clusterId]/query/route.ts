@@ -11,13 +11,15 @@ const querySchema = z.object({
 
 export async function POST(
   request: Request,
-  context: { params: { clusterId: string } }
+  context: { params: Promise<{ clusterId: string }> }
 ) {
   return handleApiRoute(async () => {
     const body = await request.json()
+    console.log('Query request:', body)
+
     const { method, path, query } = querySchema.parse(body)
 
-    const client = await clusterService.getOpenSearchClient(context.params.clusterId)
+    const client = await clusterService.getOpenSearchClient((await context.params).clusterId)
 
     let queryBody
     if (query && method !== 'GET') {
@@ -34,6 +36,7 @@ export async function POST(
       body: queryBody,
     })
 
+    console.log('API response:', response)
     return response
-  })
+  });
 } 

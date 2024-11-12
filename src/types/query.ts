@@ -45,6 +45,7 @@ export const OPERATIONS: Operation[] = [
   { value: '_search', label: '搜索', methods: ['GET', 'POST'], requiresIndex: true },
   { value: '_count', label: '文档计数', methods: ['GET', 'POST'], requiresIndex: true },
   { value: '_mget', label: '批量获取', methods: ['GET', 'POST'], requiresIndex: true },
+  { value: '_doc', label: '插入文档', methods: ['POST', 'PUT'], requiresIndex: true },
   
   // 索引操作
   { value: '_mapping', label: '映射', methods: ['GET'], requiresIndex: true },
@@ -55,7 +56,7 @@ export const OPERATIONS: Operation[] = [
   { value: '_refresh', label: '刷新', methods: ['POST'], requiresIndex: true },
   { value: '_flush', label: '落盘', methods: ['POST'], requiresIndex: true },
   
-  // 集群操作
+  // 集群操作 - 不需要索引
   { value: '_cluster/health', label: '集群健康', methods: ['GET'], requiresIndex: false },
   { value: '_cluster/state', label: '集群状态', methods: ['GET'], requiresIndex: false },
   { value: '_cluster/stats', label: '集群统计', methods: ['GET'], requiresIndex: false },
