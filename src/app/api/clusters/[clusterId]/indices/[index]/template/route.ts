@@ -4,10 +4,10 @@ import prisma from "@/lib/prisma"
 
 export async function GET(
   request: Request,
-  context: { params: { clusterId: string; index: string } }
+  context: { params: Promise<{ clusterId: string; index: string }> }
 ) {
   try {
-    const { clusterId, index } = context.params
+    const { clusterId, index } = await context.params
 
     const cluster = await prisma.cluster.findUnique({
       where: { id: clusterId }
