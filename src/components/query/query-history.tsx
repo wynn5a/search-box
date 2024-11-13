@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Clock, Trash2 } from "lucide-react"
 import { QueryHistoryItem } from "@/types/query"
+import { eventBus, EVENTS } from "@/lib/events"
 
 interface QueryHistoryProps {
   clusterId: string
@@ -16,31 +17,43 @@ const MAX_HISTORY_ITEMS = 20
 export function QueryHistory({ clusterId, onItemClick }: QueryHistoryProps) {
   const [history, setHistory] = useState<QueryHistoryItem[]>([])
 
-  useEffect(() => {
-    const loadHistory = () => {
-      const key = `query-history-${clusterId}`
-      const saved = localStorage.getItem(key)
-      if (saved) {
-        try {
-          const parsedHistory = JSON.parse(saved)
-          if (Array.isArray(parsedHistory)) {
-            // 只保留最近的20条记录
-            setHistory(parsedHistory.slice(0, MAX_HISTORY_ITEMS).filter(item => 
-              item && 
-              typeof item.id === 'string' &&
-              typeof item.query === 'string' &&
-              typeof item.timestamp === 'string' &&
-              ['GET', 'POST', 'PUT', 'DELETE'].includes(item.method) &&
-              typeof item.path === 'string'
-            ))
-          }
-        } catch (e) {
-          console.error('Failed to parse history:', e)
-          setHistory([])
+  const loadHistory = () => {
+    const key = `query-history-${clusterId}`
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      try {
+        const parsedHistory = JSON.parse(saved)
+        if (Array.isArray(parsedHistory)) {
+          // 只保留最近的20条记录
+          setHistory(parsedHistory.slice(0, MAX_HISTORY_ITEMS).filter(item => 
+            item && 
+            typeof item.id === 'string' &&
+            typeof item.query === 'string' &&
+            typeof item.timestamp === 'string' &&
+            ['GET', 'POST', 'PUT', 'DELETE'].includes(item.method) &&
+            typeof item.path === 'string'
+          ))
         }
+      } catch (e) {
+        console.error('Failed to parse history:', e)
+        setHistory([])
       }
     }
+  }
+
+  useEffect(() => {
     loadHistory()
+
+    // 监听查询历史更新事件
+    const handleHistoryUpdate = () => {
+      loadHistory()
+    }
+
+    eventBus.on(`queryHistoryUpdated-${clusterId}`, handleHistoryUpdate)
+
+    return () => {
+      eventBus.off(`queryHistoryUpdated-${clusterId}`, handleHistoryUpdate)
+    }
   }, [clusterId])
 
   const clearHistory = () => {

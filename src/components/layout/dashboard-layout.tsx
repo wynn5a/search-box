@@ -1,6 +1,5 @@
 "use client"
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { Moon, Sun } from "lucide-react"
@@ -30,7 +29,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="container py-6">{children}</main>
+      <main className="container py-2">{children}</main>
     </div>
   )
 } 

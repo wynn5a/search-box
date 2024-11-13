@@ -1,5 +1,4 @@
 import { Suspense } from "react"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { StatsCard } from "@/components/dashboard/stats-card"
 import { HealthChart } from "@/components/dashboard/health-chart"
 import { ClusterCard } from "@/components/cluster/cluster-card"
@@ -75,11 +74,9 @@ export const revalidate = 0
 
 export default async function Home() {
   return (
-    <DashboardLayout>
-      <Suspense fallback={<LoadingState />}>
-        <ClusterOverviewContent />
-      </Suspense>
-    </DashboardLayout>
+    <Suspense fallback={<LoadingState />}>
+      <ClusterOverviewContent />
+    </Suspense>
   )
 }
 

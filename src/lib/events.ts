@@ -1,7 +1,7 @@
 type EventCallback = (...args: any[]) => void;
 
 class EventBus {
-  private events: Map<string, EventCallback[]> = new Map();
+  private events: Map<string, Set<EventCallback>> = new Map();
   private static instance: EventBus;
 
   private constructor() {
@@ -25,9 +25,14 @@ class EventBus {
     }
 
     if (!this.events.has(event)) {
-      this.events.set(event, []);
+      this.events.set(event, new Set());
     }
-    this.events.get(event)?.push(callback);
+    this.events.get(event)?.add(callback);
+
+    // 返回清理函数
+    return () => {
+      this.off(event, callback);
+    };
   }
 
   off(event: string, callback: EventCallback) {
@@ -38,9 +43,9 @@ class EventBus {
 
     const callbacks = this.events.get(event);
     if (callbacks) {
-      const index = callbacks.indexOf(callback);
-      if (index > -1) {
-        callbacks.splice(index, 1);
+      callbacks.delete(callback);
+      if (callbacks.size === 0) {
+        this.events.delete(event);
       }
     }
   }
@@ -52,13 +57,20 @@ class EventBus {
     }
 
     const callbacks = this.events.get(event);
-    callbacks?.forEach(callback => {
-      try {
-        callback(...args);
-      } catch (error) {
-        console.error(`Error in event listener for ${event}:`, error);
-      }
-    });
+    if (callbacks) {
+      callbacks.forEach(callback => {
+        try {
+          callback(...args);
+        } catch (error) {
+          console.error(`Error in event listener for ${event}:`, error);
+        }
+      });
+    }
+  }
+
+  // 清理所有事件监听器
+  clearAll() {
+    this.events.clear();
   }
 }
 
@@ -70,4 +82,11 @@ export const EVENTS = {
 } as const;
 
 // 导出单例实例
-export const eventBus = EventBus.getInstance(); 
+export const eventBus = EventBus.getInstance();
+
+// 在页面卸载时清理所有事件监听器
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    eventBus.clearAll();
+  });
+} 

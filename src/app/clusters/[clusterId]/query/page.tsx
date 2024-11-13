@@ -5,10 +5,8 @@ export default async function QueryPage(props: { params: Promise<{ clusterId: st
   const params = await props.params;
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-col gap-6 p-6">
-        <ClusterBreadcrumb clusterId={params.clusterId} currentPage="数据查询" />
-      </div>
-      <div className="flex-1 border-t">
+      <ClusterBreadcrumb clusterId={params.clusterId} currentPage="数据查询" />
+      <div className="flex-1 border-t mt-3">
         <QueryWorkspaceWrapper clusterId={params.clusterId} />
       </div>
     </div>
