@@ -19,8 +19,6 @@ export async function POST(
 
     const { method, path, query } = querySchema.parse(body)
 
-    const client = await clusterService.getOpenSearchClient((await context.params).clusterId)
-
     let queryBody
     if (query && method !== 'GET') {
       try {
@@ -30,7 +28,7 @@ export async function POST(
       }
     }
 
-    const response = await client.executeQuery({
+    const response = await clusterService.executeQuery((await context.params).clusterId, {
       method,
       path,
       body: queryBody,
@@ -38,5 +36,5 @@ export async function POST(
 
     console.log('API response:', response)
     return response
-  });
+  })
 } 

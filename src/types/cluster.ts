@@ -16,4 +16,5 @@ export interface ClusterConfig {
   remotePort?: number | null
   createdAt?: Date
   updatedAt?: Date
+  lastConnected?: Date | null
 } 

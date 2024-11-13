@@ -67,10 +67,11 @@ export function QueryWorkspace({ clusterId }: { clusterId: string }) {
   }, [clusterId])
 
   return (
-    <div className="h-full">
+    <div className="h-full overflow-hidden">
       <ResizablePanelGroup 
         direction="horizontal"
         onLayout={handlePanelResize}
+        className="h-full"
       >
         {showHistory && (
           <>
@@ -78,8 +79,9 @@ export function QueryWorkspace({ clusterId }: { clusterId: string }) {
               defaultSize={historySize} 
               minSize={15} 
               maxSize={30}
+              className="h-full"
             >
-              <div className="h-full border-r">
+              <div className="h-full">
                 <QueryHistory 
                   clusterId={clusterId}
                   onItemClick={handleHistoryItemClick}
@@ -89,7 +91,10 @@ export function QueryWorkspace({ clusterId }: { clusterId: string }) {
             <ResizableHandle className="w-2 bg-muted/10 hover:bg-muted/20 transition-colors" />
           </>
         )}
-        <ResizablePanel defaultSize={showHistory ? 100 - historySize : 100}>
+        <ResizablePanel 
+          defaultSize={showHistory ? 100 - historySize : 100}
+          className="h-full"
+        >
           <QueryEditor 
             clusterId={clusterId} 
             onToggleHistory={handleToggleHistory}

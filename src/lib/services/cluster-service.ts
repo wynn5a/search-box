@@ -33,6 +33,38 @@ export class ClusterService {
     return OpenSearchClient.getInstance(config)
   }
 
+  public async executeQuery(clusterId: string, params: { 
+    method: string, 
+    path: string, 
+    body?: any 
+  }) {
+    try {
+      const client = await this.getOpenSearchClient(clusterId)
+      const result = await client.executeQuery(params)
+      await this.updateLastConnected(clusterId)
+      return result
+    } catch (error) {
+      console.error('Query execution error:', error)
+      throw error
+    }
+  }
+
+  public async executeIndexOperation(clusterId: string, params: {
+    method: string,
+    path: string,
+    body?: any
+  }) {
+    try {
+      const client = await this.getOpenSearchClient(clusterId)
+      const result = await client.executeQuery(params)
+      await this.updateLastConnected(clusterId)
+      return result
+    } catch (error) {
+      console.error('Index operation error:', error)
+      throw error
+    }
+  }
+
   public async getClusterHealth(clusterId: string) {
     try {
       const client = await this.getOpenSearchClient(clusterId)
@@ -243,6 +275,20 @@ export class ClusterService {
       remotePort: cluster.remotePort,
       createdAt: cluster.createdAt,
       updatedAt: cluster.updatedAt,
+      lastConnected: cluster.lastConnected
+    }
+  }
+
+  public async updateLastConnected(clusterId: string) {
+    try {
+      await prisma.cluster.update({
+        where: { id: clusterId },
+        data: {
+          lastConnected: new Date()
+        }
+      })
+    } catch (error) {
+      console.error('Failed to update last connected time:', error)
     }
   }
 }

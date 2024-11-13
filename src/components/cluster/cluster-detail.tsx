@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, ArrowLeft, ArrowRight, Search } from "lucide-react"
 import { ClusterConfig } from "@/types/cluster"
+import Link from "next/link"
 
 interface ClusterStats {
   health: {
@@ -45,6 +46,11 @@ export function ClusterDetail({ clusterId }: { clusterId: string }) {
         if (!clusterResponse.ok) throw new Error("Failed to fetch cluster info")
         const clusterData = await clusterResponse.json()
         setCluster(clusterData)
+
+        // 更新最近连接时间
+        await fetch(`/api/clusters/${clusterId}/connect`, {
+          method: 'POST'
+        })
 
         // 获取集群统计信息
         const statsResponse = await fetch(`/api/clusters/${clusterId}/stats`)
@@ -120,13 +126,14 @@ export function ClusterDetail({ clusterId }: { clusterId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        <Link href="/clusters" className="hover:opacity-80">
+          <Button
+            variant="ghost"
+            size="icon"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
         <div>
           <h1 className="text-3xl font-bold">{cluster.name}</h1>
           <p className="text-muted-foreground">{cluster.url}</p>

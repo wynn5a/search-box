@@ -29,13 +29,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { Star, StarOff, Trash2, RefreshCw, Loader2 } from "lucide-react"
+import { Trash2, RefreshCw, Loader2 } from "lucide-react"
 import type { ClusterConfig } from "@/types/cluster"
-import { eventBus } from "@/lib/events"
+
+interface ClusterWithHealth extends ClusterConfig {
+  health?: {
+    status: string
+  }
+  lastConnected?: Date | null
+}
 
 export function ClustersList() {
-  const [clusters, setClusters] = useState<ClusterConfig[]>([])
+  const [clusters, setClusters] = useState<ClusterWithHealth[]>([])
   const [loading, setLoading] = useState(true)
+  const [healthLoading, setHealthLoading] = useState<Record<string, boolean>>({})
   const [testingCluster, setTestingCluster] = useState<string | null>(null)
   const [clusterToDelete, setClusterToDelete] = useState<ClusterConfig | null>(null)
   const { toast } = useToast()
@@ -46,7 +53,17 @@ export function ClustersList() {
       const response = await fetch("/api/clusters")
       if (!response.ok) throw new Error("Failed to fetch clusters")
       const data = await response.json()
-      setClusters(data.success ? data.data : [])
+      const clustersData = data.success ? data.data : []
+      
+      setClusters(clustersData.map((cluster: ClusterConfig) => ({
+        ...cluster,
+        health: { status: 'unknown' }
+      })))
+      setLoading(false)
+
+      clustersData.forEach((cluster: ClusterConfig) => {
+        fetchClusterHealth(cluster.id)
+      })
     } catch (error) {
       toast({
         title: "获取集群列表失败",
@@ -54,42 +71,37 @@ export function ClustersList() {
         variant: "destructive",
       })
       setClusters([])
-    } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchClusterHealth = async (clusterId: string) => {
+    setHealthLoading(prev => ({ ...prev, [clusterId]: true }))
+    try {
+      const healthResponse = await fetch(`/api/clusters/${clusterId}/stats`)
+      if (!healthResponse.ok) throw new Error("Failed to fetch health")
+      const healthData = await healthResponse.json()
+      
+      setClusters(prev => prev.map(cluster => 
+        cluster.id === clusterId ? {
+          ...cluster,
+          health: {
+            status: healthData.data?.health?.status || 'unknown'
+          }
+        } : cluster
+      ))
+    } catch (error) {
+      console.error(`Failed to fetch health for cluster ${clusterId}:`, error)
+    } finally {
+      setHealthLoading(prev => ({ ...prev, [clusterId]: false }))
     }
   }
 
   useEffect(() => {
     fetchClusters()
-    
-    // 监听集群列表变更事件
-    const unsubscribe = eventBus.subscribe("clusterListChanged", fetchClusters)
-    
-    return () => {
-      unsubscribe()
-    }
+    const interval = setInterval(fetchClusters, 60000)
+    return () => clearInterval(interval)
   }, [])
-
-  const setDefaultCluster = async (clusterId: string, isDefault: boolean) => {
-    try {
-      const response = await fetch(`/api/clusters/${clusterId}/default`, {
-        method: "PUT",
-      })
-      if (!response.ok) throw new Error("Failed to set default cluster")
-      await fetchClusters()
-      toast({
-        title: isDefault ? "已取消默认集群" : "默认集群已更新",
-        description: isDefault ? "已取消该集群的默认状态" : "集群设置已成功更新",
-      })
-      eventBus.emit("clusterDefaultChanged")
-    } catch (error) {
-      toast({
-        title: "设置默认集群失败",
-        description: "请稍后重试",
-        variant: "destructive",
-      })
-    }
-  }
 
   const deleteCluster = async (cluster: ClusterConfig) => {
     try {
@@ -103,13 +115,7 @@ export function ClustersList() {
         description: "集群配置已成功删除",
       })
       
-      // 刷新列表
       fetchClusters()
-      
-      // 如果删除的是默认集群，触发事件
-      if (cluster.isDefault) {
-        eventBus.emit("clusterDefaultChanged")
-      }
     } catch (error) {
       toast({
         title: "删除集群失败",
@@ -158,6 +164,67 @@ export function ClustersList() {
     }
   }
 
+  const getStatusColor = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case "green":
+        return "text-green-500"
+      case "yellow":
+        return "text-yellow-500"
+      case "red":
+        return "text-red-500"
+      default:
+        return "text-gray-500"
+    }
+  }
+
+  const getStatusText = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case "green":
+        return "健康"
+      case "yellow":
+        return "警告"
+      case "red":
+        return "异常"
+      default:
+        return "未知"
+    }
+  }
+
+  const formatLastConnected = (timestamp?: Date | null) => {
+    if (!timestamp) return '从未连接'
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    
+    // 如果在1分钟内
+    if (diff < 60000) {
+      return '刚刚'
+    }
+    // 如果在1小时内
+    if (diff < 3600000) {
+      const minutes = Math.floor(diff / 60000)
+      return `${minutes}分钟前`
+    }
+    // 如果在24小时内
+    if (diff < 86400000) {
+      const hours = Math.floor(diff / 3600000)
+      return `${hours}小时前`
+    }
+    // 如果在7天内
+    if (diff < 604800000) {
+      const days = Math.floor(diff / 86400000)
+      return `${days}天前`
+    }
+    // 其他情况显示完整日期
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   if (loading) {
     return <div>加载集群列表中...</div>
   }
@@ -168,11 +235,11 @@ export function ClustersList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">状态</TableHead>
+              <TableHead>状态</TableHead>
               <TableHead>名称</TableHead>
-              <TableHead>地址</TableHead>
-              <TableHead>认证方式</TableHead>
-              <TableHead className="w-[150px]">添加时间</TableHead>
+              <TableHead>连接信息</TableHead>
+              <TableHead>最近连接</TableHead>
+              <TableHead>添加时间</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
@@ -184,14 +251,44 @@ export function ClustersList() {
                 onClick={() => router.push(`/clusters/${cluster.id}`)}
               >
                 <TableCell>
-                  {cluster.isDefault ? (
-                    <Badge>默认</Badge>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <span className={`font-medium ${getStatusColor(cluster.health?.status)}`}>
+                      {getStatusText(cluster.health?.status)}
+                    </span>
+                    {healthLoading[cluster.id] && (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
                 </TableCell>
-                <TableCell className="font-medium">{cluster.name}</TableCell>
-                <TableCell>{cluster.url}</TableCell>
                 <TableCell>
-                  {cluster.username ? "Basic Auth" : "无认证"}
+                  <div className="flex flex-col">
+                    <span className="font-medium">{cluster.name}</span>
+                    <span className="text-xs text-muted-foreground">{cluster.url}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {cluster.username ? "Basic Auth" : "无认证"}
+                      </Badge>
+                      {cluster.sshEnabled && (
+                        <Badge variant="secondary">
+                          SSH 隧道
+                        </Badge>
+                      )}
+                    </div>
+                    {cluster.sshEnabled && (
+                      <span className="text-xs text-muted-foreground">
+                        {cluster.sshUser}@{cluster.sshHost}:{cluster.sshPort}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm text-muted-foreground">
+                    {formatLastConnected(cluster.lastConnected)}
+                  </span>
                 </TableCell>
                 <TableCell>
                   {cluster.createdAt ? new Date(cluster.createdAt).toLocaleDateString() : '-'}
@@ -216,27 +313,6 @@ export function ClustersList() {
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{testingCluster === cluster.id ? "测试中..." : "测试连接"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDefaultCluster(cluster.id, cluster.isDefault)}
-                          >
-                            {cluster.isDefault ? (
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            ) : (
-                              <StarOff className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{cluster.isDefault ? "当前为默认集群" : "设为默认集群"}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

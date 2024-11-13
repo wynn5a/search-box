@@ -135,10 +135,10 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  return handleApiRoute(async () => {
+  try {
     const clusters = await prisma.cluster.findMany({
       orderBy: {
-        createdAt: 'desc',
+        createdAt: 'desc'
       },
       select: {
         id: true,
@@ -157,8 +157,46 @@ export async function GET() {
         remoteHost: true,
         remotePort: true,
         createdAt: true,
-      },
+        updatedAt: true,
+        lastConnected: true
+      }
     })
-    return clusters
-  })
+
+    const clustersWithHealth = await Promise.all(
+      clusters.map(async (cluster) => {
+        try {
+          const client = await OpenSearchClient.getInstance(cluster)
+          const health = await client.getClusterHealth()
+          return {
+            ...cluster,
+            health: {
+              status: health.status
+            }
+          }
+        } catch (error) {
+          console.error(`Error getting health for cluster ${cluster.id}:`, error)
+          return {
+            ...cluster,
+            health: {
+              status: 'unknown'
+            }
+          }
+        }
+      })
+    )
+
+    return NextResponse.json({
+      success: true,
+      data: clustersWithHealth
+    })
+  } catch (error) {
+    console.error('Failed to get clusters:', error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get clusters'
+      },
+      { status: 500 }
+    )
+  }
 } 

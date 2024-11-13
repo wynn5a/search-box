@@ -286,7 +286,7 @@ export function QueryEditor({
         loading={loading}
       />
 
-      <div className="flex-1 flex flex-col gap-4 p-4 max-h-[calc(100vh-6rem)]">
+      <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden">
         <RequestBuilder
           method={method}
           selectedOperation={selectedOperation}
@@ -299,7 +299,7 @@ export function QueryEditor({
           requestPath={getRequestPath()}
         />
 
-        <div className="h-[calc(100vh-20rem)]">
+        <div className="flex-1 min-h-0">
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={30} minSize={30} maxSize={70}>
               <QueryBody

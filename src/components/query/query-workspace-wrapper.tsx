@@ -12,11 +12,15 @@ export function QueryWorkspaceWrapper({ clusterId }: { clusterId: string }) {
 
   if (!mounted) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center">
         <p className="text-muted-foreground">加载中...</p>
       </div>
     )
   }
 
-  return <QueryWorkspace clusterId={clusterId} />
+  return (
+    <div className="h-[calc(100vh-8rem)]">
+      <QueryWorkspace clusterId={clusterId} />
+    </div>
+  )
 } 

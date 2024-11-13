@@ -1,7 +1,6 @@
 import { z } from "zod"
 import { handleApiRoute, validateRequestBody, validateParams } from "@/lib/utils/api-utils"
 import { clusterService } from "@/lib/services/cluster-service"
-import { ApiError } from "@/lib/errors/api-error"
 
 const paramsSchema = z.object({
   clusterId: z.string().min(1),

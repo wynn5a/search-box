@@ -1,53 +1,30 @@
 import { NextResponse } from "next/server"
-import prisma from "@/lib/prisma"
-import { OpenSearchClient } from "@/lib/opensearch"
-
-interface RouteParams {
-    clusterId: string
-    index: string
-    action: string
-}
-
-async function getClient(clusterId: string) {
-    const cluster = await prisma.cluster.findUnique({
-        where: { id: clusterId },
-    })
-
-    if (!cluster) {
-        throw new Error("Cluster not found")
-    }
-
-    return OpenSearchClient.getInstance(cluster)
-}
+import { clusterService } from "@/lib/services/cluster-service"
 
 export async function POST(
-    request: Request,
-    context: { params: Promise<RouteParams> }
+  request: Request,
+  context: { params: Promise<{ clusterId: string; index: string; action: string }> }
 ) {
-    const { clusterId, index, action } = await context.params
-    try {
-        const client = await getClient(clusterId)
+  const { clusterId, index, action } = await context.params
+  try {
 
-        switch (action) {
-            case "open":
-                await client.openIndex(index)
-                break
-            case "close":
-                await client.closeIndex(index)
-                break
-            default:
-                return NextResponse.json(
-                    { error: "Invalid action" },
-                    { status: 400 }
-                )
-        }
+    await clusterService.executeIndexOperation(clusterId, {
+      method: 'POST',
+      path: `/${index}/_${action}`,
+    })
 
-        return NextResponse.json({ success: true })
-    } catch (error) {
-        console.error(`Error ${action} index:`, error)
-        return NextResponse.json(
-            { error: `Failed to ${action} index` },
-            { status: 500 }
-        )
-    }
+    return NextResponse.json({
+      success: true,
+      message: `Index ${action} successful`
+    })
+  } catch (error) {
+    console.error(`Index ${action} error:`, error)
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : `Failed to ${action} index` 
+      },
+      { status: 500 }
+    )
+  }
 } 

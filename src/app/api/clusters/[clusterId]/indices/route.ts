@@ -69,24 +69,23 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  context: { params: Promise<{ clusterId: string; indexName: string }> }
+  context: { params: Promise<{ clusterId: string; index: string }> }
 ) {
   return handleApiRoute(async () => {
-    const { clusterId, indexName } = (await context.params)
+    const { clusterId, index } = (await context.params)
     
-    if (indexName.startsWith('.')) {
+    if (index.startsWith('.')) {
       throw new ApiError('Cannot delete system indices', 403)
     }
     
     const client = await clusterService.getOpenSearchClient(clusterId)
     await client.executeQuery({
-      index: indexName,
       method: 'DELETE',
-      path: '/',
+      path: `/${index}`,
     })
     
     return {
-      message: `Successfully deleted index ${indexName}`,
+      message: `Successfully deleted index ${index}`,
     }
   });
 } 
