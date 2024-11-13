@@ -1,22 +1,28 @@
-import './globals.css'
-import { Inter } from 'next/font/google'
-import { ThemeProvider } from '@/components/providers/theme-provider'
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import { ThemeProvider } from "@/components/providers/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import "./globals.css"
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] })
 
-export const metadata = {
-  title: 'Search Admin',
-  description: 'Search Engine Management System',
+export const metadata: Metadata = {
+  title: "OpenSearch Manager",
+  description: "OpenSearch 集群管理工具",
 }
+
+// 添加这个配置来禁用静态生成
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
@@ -24,7 +30,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <DashboardLayout>
+            {children}
+          </DashboardLayout>
           <Toaster />
         </ThemeProvider>
       </body>

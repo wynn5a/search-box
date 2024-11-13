@@ -31,6 +31,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Trash2, RefreshCw, Loader2 } from "lucide-react"
 import type { ClusterConfig } from "@/types/cluster"
+import { eventBus, EVENTS } from "@/lib/events"
 
 interface ClusterWithHealth extends ClusterConfig {
   health?: {
@@ -99,8 +100,25 @@ export function ClustersList() {
 
   useEffect(() => {
     fetchClusters()
+
+    // 监听集群变更事件
+    const handleClusterAdded = () => fetchClusters()
+    const handleClusterUpdated = () => fetchClusters()
+    const handleClusterDeleted = () => fetchClusters()
+
+    eventBus.on(EVENTS.CLUSTER_ADDED, handleClusterAdded)
+    eventBus.on(EVENTS.CLUSTER_UPDATED, handleClusterUpdated)
+    eventBus.on(EVENTS.CLUSTER_DELETED, handleClusterDeleted)
+
+    // 定时刷新
     const interval = setInterval(fetchClusters, 60000)
-    return () => clearInterval(interval)
+
+    return () => {
+      clearInterval(interval)
+      eventBus.off(EVENTS.CLUSTER_ADDED, handleClusterAdded)
+      eventBus.off(EVENTS.CLUSTER_UPDATED, handleClusterUpdated)
+      eventBus.off(EVENTS.CLUSTER_DELETED, handleClusterDeleted)
+    }
   }, [])
 
   const deleteCluster = async (cluster: ClusterConfig) => {

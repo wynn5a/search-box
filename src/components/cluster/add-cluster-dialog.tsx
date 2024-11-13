@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { PlusCircle, Loader2, Network } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { eventBus } from "@/lib/events"
+import { eventBus, EVENTS } from "@/lib/events"
 
 const clusterFormSchema = z.object({
   name: z.string().min(2, "集群名称至少2个字符"),
@@ -146,56 +146,36 @@ export function AddClusterDialog() {
     }
   }
 
-  async function onSubmit(data: ClusterFormValues) {
-    setSubmitting(true)
+  const onSubmit = async (data: ClusterFormValues) => {
     try {
-      const formData = {
-        ...data,
-        username: data.username || null,
-        password: data.password || null,
-        ...((!data.sshEnabled && {
-          sshHost: null,
-          sshUser: null,
-          sshPassword: null,
-          sshKeyFile: null,
-          sshPort: null,
-          localPort: null,
-          remoteHost: null,
-          remotePort: null,
-        })),
-      }
-
+      setSubmitting(true)
       const response = await fetch("/api/clusters", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       })
 
-      const result = await response.json()
-
-      if (!result.success) {
-        throw new Error(result.details || result.error || '添加集群失败')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to add cluster")
       }
 
       toast({
-        title: "集群已添加",
-        description: result.message || "集群配置已成功添加",
+        title: "集群添加成功",
+        description: "新的集群已成功添加",
       })
 
-      eventBus.emit("clusterListChanged")
-      if (result.cluster.isDefault) {
-        eventBus.emit("clusterDefaultChanged")
-      }
-
+      // 触发集群添加事件
+      eventBus.emit(EVENTS.CLUSTER_ADDED)
+      
       setOpen(false)
       form.reset()
     } catch (error) {
-      console.error("Error adding cluster:", error)
       toast({
-        title: "添加失败",
-        description: error instanceof Error ? error.message : "添加集群配置时发生错误",
+        title: "添加集群失败",
+        description: error instanceof Error ? error.message : "请稍后重试",
         variant: "destructive",
       })
     } finally {
