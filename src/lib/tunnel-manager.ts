@@ -1,6 +1,10 @@
 import { Client } from 'ssh2'
 import { createServer, Server } from 'net'
 import { ConnectConfig } from 'ssh2'
+import { EventEmitter } from 'events'
+
+// 设置全局最大监听器数量
+EventEmitter.defaultMaxListeners = 20
 
 interface TunnelConfig {
   sshHost: string
@@ -15,18 +19,35 @@ interface TunnelConfig {
 
 interface TunnelInfo {
   server: Server
-  connections: Set<any>  // 存储所有活动连接
+  connections: Set<any>
   lastUsed: number
+  sshClient?: Client
 }
 
 class TunnelManager {
   private static instance: TunnelManager
   private tunnels: Map<string, TunnelInfo> = new Map()
   private cleanupInterval: NodeJS.Timeout | null = null
+  private exitHandler: () => Promise<void>
 
   private constructor() {
     // 启动定期清理
     this.cleanupInterval = setInterval(() => this.cleanupUnusedTunnels(), 60000)
+
+    // 创建一个单一的退出处理函数
+    this.exitHandler = async () => {
+      console.log('Cleaning up tunnels before exit...')
+      await this.cleanup()
+      process.exit()
+    }
+
+    // 只添加一次事件监听器
+    process.once('exit', () => {
+      void this.cleanup()
+    })
+
+    process.once('SIGINT', this.exitHandler)
+    process.once('SIGTERM', this.exitHandler)
   }
 
   public static getInstance(): TunnelManager {
@@ -148,6 +169,11 @@ class TunnelManager {
     const tunnelInfo = this.tunnels.get(clusterId)
     if (tunnelInfo) {
       return new Promise((resolve) => {
+        // 关闭 SSH 客户端
+        if (tunnelInfo.sshClient) {
+          tunnelInfo.sshClient.end()
+        }
+
         // 关闭所有活动连接
         tunnelInfo.connections.forEach(connection => {
           try {
@@ -192,6 +218,7 @@ class TunnelManager {
   public async cleanup() {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
     }
     
     // 使用 Array.from 来避免迭代器问题
@@ -199,17 +226,11 @@ class TunnelManager {
     for (const clusterId of clusterIds) {
       await this.closeTunnel(clusterId)
     }
+
+    // 移除事件监听器
+    process.removeListener('SIGINT', this.exitHandler)
+    process.removeListener('SIGTERM', this.exitHandler)
   }
 }
 
 export const tunnelManager = TunnelManager.getInstance()
-
-// 确保在进程退出时清理资源
-process.on('exit', () => {
-  tunnelManager.cleanup().catch(console.error)
-})
-
-process.on('SIGINT', () => {
-  tunnelManager.cleanup().catch(console.error)
-  process.exit()
-})

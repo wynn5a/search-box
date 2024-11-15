@@ -3,7 +3,6 @@ import { getClusterConfig } from "@/lib/clusters"
 import { OpenSearchClient } from "@/lib/opensearch"
 import { handleApiRoute } from "@/lib/utils/api-utils"
 
-// GET 获取索引设置
 export async function GET(
   request: NextRequest,
   props: { params: Promise<{ clusterId: string; index: string }> }
@@ -19,16 +18,15 @@ export async function GET(
     }
 
     const client = await OpenSearchClient.getInstance(cluster)
-    const settings = await client.getIndexSettings(params.index)
+    const mappings = await client.getIndexMappings(params.index)
 
     return {
       success: true,
-      data: settings[params.index]?.settings || {}
+      data: mappings[params.index]?.mappings || {}
     }
   })
 }
 
-// PUT 更新索引设置
 export async function PUT(
   request: NextRequest,
   props: { params: Promise<{ clusterId: string; index: string }> }
@@ -43,16 +41,28 @@ export async function PUT(
       }
     }
 
-    const settings = await request.json()
+    const mappings = await request.json()
     const client = await OpenSearchClient.getInstance(cluster)
-    await client.updateIndexSettings(params.index, settings)
+    
+    try {
+      await client.putIndexMappings(params.index, mappings)
 
-    return {
-      success: true,
-      data: {
-        message: "Settings updated successfully",
-        index: params.index
+      return {
+        success: true,
+        data: {
+          message: "Mappings updated successfully",
+          index: params.index
+        }
       }
+    } catch (error: any) {
+      // 处理 OpenSearch 的错误响应
+      if (error.body?.error?.reason) {
+        return {
+          success: false,
+          error: `Failed to update mappings: ${error.body.error.reason}`
+        }
+      }
+      throw error
     }
   })
 } 

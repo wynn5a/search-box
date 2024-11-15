@@ -16,6 +16,7 @@ import { Search, RefreshCw, Database, Cog, ListFilter } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useRouter } from "next/navigation"
 
 interface IndexInfo {
   health: string
@@ -43,6 +44,7 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
   const [refreshing, setRefreshing] = useState(false)
   const [indexType, setIndexType] = useState<IndexType>('user')
   const { toast } = useToast()
+  const router = useRouter()
 
   const fetchIndices = async () => {
     try {
@@ -170,7 +172,11 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
               </TableRow>
             ) : (
               filteredIndices.map((index) => (
-                <TableRow key={index.index}>
+                <TableRow 
+                  key={index.index}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/clusters/${clusterId}/indices/${index.index}`)}
+                >
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className={cn(

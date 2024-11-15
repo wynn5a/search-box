@@ -15,7 +15,7 @@ OpenSearch Manager is a modern web interface for managing and monitoring multipl
 
 - **Frontend**: Next.js 13+, React, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
-- **Database**: Prisma with Supabase
+- **Database**: Prisma with PostgreSQL
 - **Dependencies**: 
   - OpenSearch Client
   - SSH2 (for SSH tunneling)

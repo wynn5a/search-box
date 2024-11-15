@@ -83,7 +83,8 @@ class OpenSearchClient {
     
     for (let i = 0; i < this.retryCount; i++) {
       try {
-        return await operation()
+        const result = await operation()
+        return result ?? {} as T
       } catch (error) {
         lastError = error as Error
         if (i < this.retryCount - 1) {
@@ -274,6 +275,7 @@ class OpenSearchClient {
         index: name,
         include_defaults: true,
       })
+      console.log(response)
       return response.body
     }, 'Failed to get index settings')
   }
@@ -291,8 +293,44 @@ class OpenSearchClient {
     return this.withRetry(async () => {
       const response = await this.client.indices.stats({
         index: name,
+        metric: '_all'  // 获取所有指标
       })
-      return response.body
+
+      // 确保返回正确的数据结构
+      const indexStats = response.body.indices[name]
+      if (!indexStats) {
+        return {
+          _all: {
+            primaries: {
+              docs: { count: 0, deleted: 0 },
+              store: { size_in_bytes: 0 }
+            },
+            total: {
+              docs: { count: 0, deleted: 0 },
+              store: { size_in_bytes: 0 }
+            }
+          },
+          _shards: {
+            total: 0,
+            successful: 0,
+            failed: 0
+          }
+        }
+      }
+
+      return {
+        _all: {
+          primaries: {
+            docs: indexStats.primaries.docs,
+            store: indexStats.primaries.store
+          },
+          total: {
+            docs: indexStats.total.docs,
+            store: indexStats.total.store
+          }
+        },
+        _shards: response.body._shards
+      }
     }, 'Failed to get index stats')
   }
 
@@ -389,6 +427,76 @@ class OpenSearchClient {
         defaults: response.body?.defaults || {}
       }
     }, 'Failed to get cluster settings')
+  }
+
+  public async putIndexMappings(indexName: string, mappings: Record<string, any>) {
+    return this.withRetry(async () => {
+      try {
+        const response = await this.client.indices.putMapping({
+          index: indexName,
+          body: mappings,
+        })
+        return response.body
+      } catch (error: any) {
+        // 处理特定的错误类型
+        if (error.body?.error?.type === 'illegal_argument_exception') {
+          throw new ApiError(
+            'Invalid mapping configuration',
+            400,
+            error.body.error.reason
+          )
+        }
+        if (error.body?.error?.type === 'mapper_parsing_exception') {
+          throw new ApiError(
+            'Mapping parse error',
+            400,
+            error.body.error.reason
+          )
+        }
+        throw error
+      }
+    }, 'Failed to update index mappings')
+  }
+
+  public async reindexWithNewMapping(
+    sourceIndex: string,
+    targetIndex: string,
+    newMappings: Record<string, any>
+  ) {
+    return this.withRetry(async () => {
+      // 1. 创建新索引
+      await this.client.indices.create({
+        index: targetIndex,
+        body: {
+          mappings: newMappings
+        }
+      })
+
+      // 2. 重建索引
+      await this.client.reindex({
+        body: {
+          source: {
+            index: sourceIndex
+          },
+          dest: {
+            index: targetIndex
+          }
+        }
+      })
+
+      // 3. 删除旧索引
+      await this.client.indices.delete({
+        index: sourceIndex
+      })
+
+      // 4. 创建别名（可选）
+      await this.client.indices.putAlias({
+        index: targetIndex,
+        name: sourceIndex
+      })
+
+      return true
+    }, 'Failed to reindex with new mapping')
   }
 }
 
