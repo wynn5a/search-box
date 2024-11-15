@@ -263,7 +263,6 @@ export class ClusterService {
       url: cluster.url,
       username: cluster.username,
       password: cluster.password,
-      isDefault: cluster.isDefault,
       sshEnabled: cluster.sshEnabled || false,
       sshHost: cluster.sshHost,
       sshPort: cluster.sshPort,
@@ -275,7 +274,6 @@ export class ClusterService {
       remotePort: cluster.remotePort,
       createdAt: cluster.createdAt,
       updatedAt: cluster.updatedAt,
-      lastConnected: cluster.lastConnected
     }
   }
 

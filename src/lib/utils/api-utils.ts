@@ -11,7 +11,7 @@ interface ApiResponse<T> {
 }
 
 export async function handleApiRoute<T>(
-  handler: () => Promise<T>,
+  handler: () => Promise<ApiResponse<T>>,
   options?: {
     successMessage?: string;
     errorMessage?: string;
@@ -19,11 +19,13 @@ export async function handleApiRoute<T>(
 ): Promise<NextResponse<ApiResponse<T>>> {
   try {
     const result = await handler()
-    return NextResponse.json({
-      success: true,
-      data: result,
-      message: options?.successMessage
-    })
+    if (!result) {
+      return NextResponse.json({
+        success: false,
+        error: "No response data"
+      })
+    }
+    return NextResponse.json(result)
   } catch (error) {
     console.error('API Error:', error)
 

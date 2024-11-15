@@ -1,33 +1,37 @@
-import prisma from "@/lib/prisma"
+import { NextRequest } from "next/server"
+import { getClusterConfig } from "@/lib/clusters"
 import { OpenSearchClient } from "@/lib/opensearch"
 import { handleApiRoute } from "@/lib/utils/api-utils"
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ clusterId: string }> }
-) {
-  return handleApiRoute(async () => {
-    const cluster = await prisma.cluster.findUnique({
-      where: {
-        id: (await context.params).clusterId,
-      },
-    })
+interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  error?: string
+}
 
+export async function GET(request: NextRequest, props: { params: Promise<{ clusterId: string }> }): Promise<Response> {
+  const params = await props.params;
+  return handleApiRoute<{ health: any; stats: any }>(async () => {
+    const cluster = await getClusterConfig(params.clusterId)
     if (!cluster) {
-      throw new Error("Cluster not found")
+      return {
+        success: false,
+        error: "Cluster not found"
+      }
     }
 
     const client = await OpenSearchClient.getInstance(cluster)
     const [health, stats] = await Promise.all([
       client.getClusterHealth(),
-      client.getClusterStats(),
+      client.getClusterStats()
     ])
 
     return {
-      name: cluster.name,
-      version: stats.nodes?.versions?.[0] || 'unknown',
-      health,
-      stats,
+      success: true,
+      data: {
+        health,
+        stats
+      }
     }
   })
 } 

@@ -40,7 +40,7 @@ export function ClusterBreadcrumb({ clusterId, currentPage }: ClusterBreadcrumbP
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link 
-          href="/" 
+          href="/clusters" 
           className="hover:text-foreground transition-colors"
         >
           集群列表
@@ -54,7 +54,7 @@ export function ClusterBreadcrumb({ clusterId, currentPage }: ClusterBreadcrumbP
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <Link 
-        href="/" 
+        href="/clusters" 
         className="hover:text-foreground transition-colors"
       >
         集群列表

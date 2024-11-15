@@ -1,40 +1,26 @@
-import { NextResponse } from "next/server"
-import { clusterService } from "@/lib/services/cluster-service"
+import { NextRequest } from "next/server"
+import { getClusterConfig } from "@/lib/clusters"
+import { OpenSearchClient } from "@/lib/opensearch"
 import { handleApiRoute } from "@/lib/utils/api-utils"
-import { z } from "zod"
 
-const querySchema = z.object({
-  method: z.enum(["GET", "POST", "PUT", "DELETE"]),
-  path: z.string(),
-  query: z.string().optional(),
-})
-
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ clusterId: string }> }
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ clusterId: string }> }) {
+  const params = await props.params;
   return handleApiRoute(async () => {
-    const body = await request.json()
-    console.log('Query request:', body)
-
-    const { method, path, query } = querySchema.parse(body)
-
-    let queryBody
-    if (query && method !== 'GET') {
-      try {
-        queryBody = JSON.parse(query)
-      } catch (e) {
-        throw new Error("Invalid JSON in query body")
+    const cluster = await getClusterConfig(params.clusterId)
+    if (!cluster) {
+      return {
+        success: false,
+        error: "Cluster not found"
       }
     }
 
-    const response = await clusterService.executeQuery((await context.params).clusterId, {
-      method,
-      path,
-      body: queryBody,
-    })
+    const { method, path, body } = await request.json()
+    const client = await OpenSearchClient.getInstance(cluster)
+    const result = await client.executeQuery({ method, path, body })
 
-    console.log('API response:', response)
-    return response
+    return {
+      success: true,
+      data: result
+    }
   })
 } 

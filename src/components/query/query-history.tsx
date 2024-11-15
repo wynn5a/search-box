@@ -78,7 +78,7 @@ export function QueryHistory({ clusterId, onItemClick }: QueryHistoryProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b p-4 shrink-0">
+      <div className="flex items-center justify-between p-3 shrink-0">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold">查询历史</h3>
           <span className="text-xs text-muted-foreground">

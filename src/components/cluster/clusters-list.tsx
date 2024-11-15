@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
   Table,
@@ -29,9 +29,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { Trash2, RefreshCw, Loader2 } from "lucide-react"
+import { Trash2, RefreshCw, Loader2, Network, Nfc, ChevronDown, ChevronUp } from "lucide-react"
 import type { ClusterConfig } from "@/types/cluster"
 import { eventBus, EVENTS } from "@/lib/events"
+import { cn } from "@/lib/utils"
+import { AddClusterButton } from "@/components/cluster/add-cluster-button"
+import { Database } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ClusterWithHealth extends ClusterConfig {
   health?: {
@@ -48,23 +52,21 @@ export function ClustersList() {
   const [clusterToDelete, setClusterToDelete] = useState<ClusterConfig | null>(null)
   const { toast } = useToast()
   const router = useRouter()
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'created'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const fetchClusters = async () => {
     try {
+      setLoading(true)
       const response = await fetch("/api/clusters")
       if (!response.ok) throw new Error("Failed to fetch clusters")
       const data = await response.json()
+      console.log(data)
       const clustersData = data.success ? data.data : []
       
       setClusters(clustersData.map((cluster: ClusterConfig) => ({
-        ...cluster,
-        health: { status: 'unknown' }
+        ...cluster
       })))
-      setLoading(false)
-
-      clustersData.forEach((cluster: ClusterConfig) => {
-        fetchClusterHealth(cluster.id)
-      })
     } catch (error) {
       toast({
         title: "获取集群列表失败",
@@ -72,6 +74,7 @@ export function ClustersList() {
         variant: "destructive",
       })
       setClusters([])
+    } finally {
       setLoading(false)
     }
   }
@@ -101,25 +104,32 @@ export function ClustersList() {
   useEffect(() => {
     fetchClusters()
 
-    // 监听集群变更事件
-    const handleClusterAdded = () => fetchClusters()
-    const handleClusterUpdated = () => fetchClusters()
-    const handleClusterDeleted = () => fetchClusters()
+    const handleClusterAdded = () => {
+      fetchClusters()
+    }
+    const handleClusterUpdated = () => {
+      fetchClusters()
+    }
+    const handleClusterDeleted = () => {
+      fetchClusters()
+    }
 
     eventBus.on(EVENTS.CLUSTER_ADDED, handleClusterAdded)
     eventBus.on(EVENTS.CLUSTER_UPDATED, handleClusterUpdated)
     eventBus.on(EVENTS.CLUSTER_DELETED, handleClusterDeleted)
 
-    // 定时刷新
-    const interval = setInterval(fetchClusters, 60000)
-
     return () => {
-      clearInterval(interval)
       eventBus.off(EVENTS.CLUSTER_ADDED, handleClusterAdded)
       eventBus.off(EVENTS.CLUSTER_UPDATED, handleClusterUpdated)
       eventBus.off(EVENTS.CLUSTER_DELETED, handleClusterDeleted)
     }
   }, [])
+
+  const handleRefresh = () => {
+    clusters.forEach(cluster => {
+      fetchClusterHealth(cluster.id)
+    })
+  }
 
   const deleteCluster = async (cluster: ClusterConfig) => {
     try {
@@ -153,11 +163,7 @@ export function ClustersList() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          url: cluster.url,
-          username: cluster.username,
-          password: cluster.password,
-        }),
+        body: JSON.stringify(cluster),
       })
 
       const result = await response.json()
@@ -243,17 +249,110 @@ export function ClustersList() {
     })
   }
 
+  const sortedClusters = useMemo(() => {
+    return [...clusters].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return sortOrder === 'asc' 
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name)
+        case 'status':
+          return sortOrder === 'asc'
+            ? (a.health?.status || '').localeCompare(b.health?.status || '')
+            : (b.health?.status || '').localeCompare(a.health?.status || '')
+        case 'created':
+          return sortOrder === 'asc'
+            ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        default:
+          return 0
+      }
+    })
+  }, [clusters, sortBy, sortOrder])
+
   if (loading) {
-    return <div>加载集群列表中...</div>
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-5 w-5 rounded-full" />
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-5 w-8" />
+          </div>
+          <Skeleton className="h-9 w-24" />
+        </div>
+        <div className="rounded-lg border">
+          <div className="p-4 space-y-4">
+            {Array(3).fill(0).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-4 w-[60%]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (clusters.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed">
+        <div className="flex flex-col items-center space-y-4 max-w-[420px] text-center">
+          <div className="rounded-full bg-primary/10 p-4">
+            <Database className="h-8 w-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold">没有集群</h3>
+            <p className="text-sm text-muted-foreground">
+              您还没有添加任何集群。添加一个集群来开始管理和监控您的 OpenSearch 服务。
+            </p>
+          </div>
+          <AddClusterButton />
+        </div>
+      </div>
+    )
   }
 
   return (
-    <>
-      <div className="rounded-md border">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Network className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">集群列表</h2>
+          <Badge variant="secondary">{clusters.length}</Badge>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleRefresh}
+          disabled={Object.values(healthLoading).some(Boolean)}
+        >
+          <RefreshCw className={cn(
+            "h-4 w-4 mr-2",
+            Object.values(healthLoading).some(Boolean) && "animate-spin"
+          )} />
+          刷新状态
+        </Button>
+      </div>
+      <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>状态</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => {
+                  if (sortBy === 'status') {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+                  } else {
+                    setSortBy('status')
+                    setSortOrder('asc')
+                  }
+                }}
+              >
+                状态 {sortBy === 'status' && sortOrder === 'asc' && <ChevronDown className="inline h-4 w-4 ml-1" />}
+                {sortBy === 'status' && sortOrder === 'desc' && <ChevronUp className="inline h-4 w-4 ml-1" />}
+              </TableHead>
               <TableHead>名称</TableHead>
               <TableHead>连接信息</TableHead>
               <TableHead>最近连接</TableHead>
@@ -262,15 +361,27 @@ export function ClustersList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {clusters.map((cluster) => (
+            {sortedClusters.map((cluster) => (
               <TableRow 
                 key={cluster.id}
-                className="cursor-pointer"
+                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => router.push(`/clusters/${cluster.id}`)}
               >
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className={`font-medium ${getStatusColor(cluster.health?.status)}`}>
+                    <div className={cn(
+                      "h-2 w-2 rounded-full",
+                      {
+                        "bg-green-500": cluster.health?.status === "green",
+                        "bg-yellow-500": cluster.health?.status === "yellow",
+                        "bg-red-500": cluster.health?.status === "red",
+                        "bg-gray-500": !cluster.health?.status
+                      }
+                    )} />
+                    <span className={cn(
+                      "font-medium",
+                      getStatusColor(cluster.health?.status)
+                    )}>
                       {getStatusText(cluster.health?.status)}
                     </span>
                     {healthLoading[cluster.id] && (
@@ -287,11 +398,11 @@ export function ClustersList() {
                 <TableCell>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="font-normal">
                         {cluster.username ? "Basic Auth" : "无认证"}
                       </Badge>
                       {cluster.sshEnabled && (
-                        <Badge variant="secondary">
+                        <Badge variant="secondary" className="font-normal">
                           SSH 隧道
                         </Badge>
                       )}
@@ -325,7 +436,7 @@ export function ClustersList() {
                             {testingCluster === cluster.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <RefreshCw className="h-4 w-4" />
+                              <Nfc className="h-4 w-4" />
                             )}
                           </Button>
                         </TooltipTrigger>
@@ -343,7 +454,7 @@ export function ClustersList() {
                             size="icon"
                             onClick={() => setClusterToDelete(cluster)}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -361,26 +472,26 @@ export function ClustersList() {
 
       <AlertDialog 
         open={!!clusterToDelete} 
-        onOpenChange={() => setClusterToDelete(null)}
+        onOpenChange={(open) => !open && setClusterToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除集群</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除集群 "{clusterToDelete?.name}" 吗？此操作无法撤销。
+              确定要删除集群 "{clusterToDelete?.name}" ���？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => clusterToDelete && deleteCluster(clusterToDelete)}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               删除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 } 

@@ -7,8 +7,8 @@ class OpenSearchClient {
   private static instances: Map<string, OpenSearchClient> = new Map()
   private client: Client
   private clusterId: string
-  private retryCount: number = 3
-  private retryDelay: number = 1000
+  private retryCount: number = 2
+  private retryDelay: number = 100
 
   private constructor(config: ClusterConfig) {
     this.clusterId = config.id || ''
@@ -220,33 +220,18 @@ class OpenSearchClient {
     }
   }
 
-  public async testConnection(timeout: number = 10000): Promise<boolean> {
-    try {
-      const timeoutPromise = new Promise<boolean>((resolve) => {
-        setTimeout(() => resolve(false), timeout)
-      })
-
-      const healthCheckPromise = this.client.cluster.health({
-        timeout: `${timeout}ms`,
-        wait_for_status: 'yellow',
-        level: 'cluster',
-      }).then(() => true)
-      .catch((error) => {
+  public async testConnection(timeout: number = 5000): Promise<boolean> {
+    return this.withRetry(async () => {
+      try {
+        const response = await this.client.cluster.health({
+          timeout: `${timeout}ms`,
+        })
+        return response.statusCode === 200
+      } catch (error) {
         console.error('Connection test failed:', error)
         return false
-      })
-
-      // 使用 Promise.race 来处理超时
-      const result = await Promise.race([
-        healthCheckPromise,
-        timeoutPromise
-      ])
-
-      return result
-    } catch (error) {
-      console.error('Connection test error:', error)
-      return false
-    }
+      }
+    }, 'Failed to test connection')
   }
 
   public async getNodes() {
@@ -389,6 +374,21 @@ class OpenSearchClient {
         error: error instanceof Error ? error.message : 'Failed to generate template'
       }
     }
+  }
+
+  public async getClusterSettings(params?: { include_defaults?: boolean, flat_settings?: boolean }) {
+    return this.withRetry(async () => {
+      const response = await this.client.cluster.getSettings({
+        include_defaults: params?.include_defaults,
+        flat_settings: params?.flat_settings,
+      })
+
+      return {
+        persistent: response.body?.persistent || {},
+        transient: response.body?.transient || {},
+        defaults: response.body?.defaults || {}
+      }
+    }, 'Failed to get cluster settings')
   }
 }
 

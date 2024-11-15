@@ -54,7 +54,6 @@ export function QueryResults({
 
   // 渲染表格内容
   const renderTable = () => {
-    // 如果是搜索结果
     if (result?.hits?.hits) {
       const hits = result.hits.hits
       if (hits.length === 0) {
@@ -65,27 +64,18 @@ export function QueryResults({
         )
       }
 
-      const firstHit = hits[0]
-      if (!firstHit._source) {
-        return (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">文档内容为空</p>
-          </div>
-        )
-      }
-
-      const fields = getFields(firstHit._source)
+      const fields = getFields(hits[0]._source)
 
       return (
-        <ScrollArea className="h-full">
-          <div className="p-4">
-            <div className="mb-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-4">
-                <span>总命中: {result.hits.total?.value || 0}</span>
-                <span>显示: {hits.length} 条</span>
-              </div>
+        <div className="h-full flex flex-col">
+          <div className="shrink-0 p-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4">
+              <span>总命中: {result.hits.total?.value || 0}</span>
+              <span>显示: {hits.length} 条</span>
             </div>
-            <Table>
+          </div>
+          <div className="flex-1 min-h-0">
+            <Table containerClassName="h-full">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[100px]">文档ID</TableHead>
@@ -109,23 +99,6 @@ export function QueryResults({
                 ))}
               </TableBody>
             </Table>
-          </div>
-        </ScrollArea>
-      )
-    }
-
-    // 如果是插入/更新文档的结果
-    if (result?._id) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <p className="text-green-500 font-medium mb-2">操作成功</p>
-            <p className="text-sm text-muted-foreground">文档 ID: {result._id}</p>
-            {result.result && (
-              <p className="text-sm text-muted-foreground mt-1">
-                结果: {result.result}
-              </p>
-            )}
           </div>
         </div>
       )

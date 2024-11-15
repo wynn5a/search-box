@@ -4,10 +4,13 @@ import { LucideIcon } from "lucide-react"
 interface StatsCardProps {
   title: string
   value: string | number
-  description?: string
-  icon?: LucideIcon
-  className?: string
-  onClick?: () => void
+  description: string
+  icon: LucideIcon
+  trend?: {
+    value: number
+    label: string
+    type: "success" | "danger" | "warning" | "info"
+  }
 }
 
 export function StatsCard({
@@ -15,13 +18,11 @@ export function StatsCard({
   value,
   description,
   icon: Icon,
-  className,
-  onClick,
+  trend,
 }: StatsCardProps) {
   return (
     <Card 
-      className={`${className} ${onClick ? 'cursor-pointer transition-colors hover:bg-muted/50' : ''}`}
-      onClick={onClick}
+      className={`${trend ? 'cursor-pointer transition-colors hover:bg-muted/50' : ''}`}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">

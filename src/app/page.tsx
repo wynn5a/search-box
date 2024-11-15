@@ -2,12 +2,13 @@ import { Suspense } from "react"
 import { StatsCard } from "@/components/dashboard/stats-card"
 import { HealthChart } from "@/components/dashboard/health-chart"
 import { ClusterCard } from "@/components/cluster/cluster-card"
-import { AddClusterDialog } from "@/components/cluster/add-cluster-dialog"
 import { Button } from "@/components/ui/button"
-import { Database, Server, HardDrive, Settings } from "lucide-react"
+import { Database, Server, HardDrive, Settings, ChevronRight } from "lucide-react"
 import { clusterService } from "@/lib/services/cluster-service"
 import Link from "next/link"
 import { formatBytes } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
+import { AddClusterButton } from "@/components/cluster/add-cluster-button"
 
 async function getClusters() {
   const clusters = await clusterService.getAllClusters()
@@ -52,8 +53,14 @@ async function getSummary() {
 
 function LoadingState() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="h-8 w-48 animate-pulse rounded bg-muted"></div>
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex items-center justify-between">
+        <div className="h-8 w-48 animate-pulse rounded bg-muted"></div>
+        <div className="flex gap-2">
+          <div className="h-9 w-24 animate-pulse rounded bg-muted"></div>
+          <div className="h-9 w-24 animate-pulse rounded bg-muted"></div>
+        </div>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="h-32 animate-pulse rounded-lg bg-muted"></div>
@@ -68,7 +75,6 @@ function LoadingState() {
   )
 }
 
-// 添加这个配置来禁用静态生成
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -92,17 +98,21 @@ async function ClusterOverviewContent() {
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">集群概览</h1>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">仪表盘</h1>
+          <p className="text-sm text-muted-foreground">
+            查看所有集群的概览信息和健康状态
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <Link href="/clusters">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2">
               <Settings className="h-4 w-4" />
               集群管理
             </Button>
           </Link>
-          <AddClusterDialog />
         </div>
       </div>
 
@@ -112,6 +122,11 @@ async function ClusterOverviewContent() {
           value={summary.totalClusters}
           description="所有已添加的集群数量"
           icon={Server}
+          trend={{
+            value: summary.healthyClusters,
+            label: "健康集群",
+            type: "success"
+          }}
         />
         <StatsCard
           title="索引总数"
@@ -130,34 +145,61 @@ async function ClusterOverviewContent() {
         </div>
       </div>
 
+      <Separator className="my-2" />
+
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">集群列表</h2>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
-              <span>健康</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-yellow-500" />
-              <span>警告</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-red-500" />
-              <span>异常</span>
-            </div>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold tracking-tight">集群列表</h2>
+            <p className="text-sm text-muted-foreground">
+              管理所有已添加的 OpenSearch 集群，点击卡片可以查看详细信息
+            </p>
+          </div>
+          <Link href="/clusters" className="group">
+            <Button variant="ghost" size="sm" className="gap-2">
+              查看全部
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
+        </div>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+            <span>健康</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-yellow-500" />
+            <span>警告</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-red-500" />
+            <span>异常</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          管理所有已添加的 OpenSearch 集群，点击卡片可以查看详细信息
-        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {clusters.map((cluster) => (
-          <ClusterCard key={cluster.id} cluster={cluster} />
-        ))}
-      </div>
+      {clusters.length === 0 ? (
+        <div className="flex items-center justify-center h-[200px] rounded-lg border border-dashed">
+          <div className="flex flex-col items-center space-y-4 max-w-[420px] text-center">
+            <div className="rounded-full bg-primary/10 p-4">
+              <Database className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold">没有集群</h3>
+              <p className="text-sm text-muted-foreground">
+                您还没有添加任何集群。添加一个集群来开始管理和监控您的 OpenSearch 服务。
+              </p>
+            </div>
+            <AddClusterButton />
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {clusters.map((cluster) => (
+            <ClusterCard key={cluster.id} cluster={cluster} />
+          ))}
+        </div>
+      )}
     </div>
   )
 } 

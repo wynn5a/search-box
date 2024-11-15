@@ -1,0 +1,49 @@
+{
+  "common": {
+    "searchAdmin": "搜索管理后台",
+    "toggleTheme": "切换主题",
+    "toggleLanguage": "切换语言",
+    "language": {
+      "en": "English",
+      "zh": "中文"
+    }
+  },
+  "clusters": {
+    "title": "集群管理",
+    "indices": {
+      "title": "索引管理",
+      "createIndex": "创建索引",
+      "settings": "索引设置",
+      "name": "索引名称",
+      "numberOfShards": "分片数量",
+      "numberOfReplicas": "副本数量",
+      "actions": "操作"
+    },
+    "query": {
+      "title": "查询",
+      "execute": "执行查询",
+      "results": "查询结果",
+      "queryPlaceholder": "在此输入查询语句..."
+    }
+  },
+  "dialogs": {
+    "createIndex": {
+      "title": "创建新索引",
+      "name": "索引名称",
+      "shards": "分片数量",
+      "replicas": "副本数量",
+      "create": "创建",
+      "cancel": "取消"
+    },
+    "settings": {
+      "title": "索引设置",
+      "save": "保存更改",
+      "cancel": "取消"
+    }
+  },
+  "messages": {
+    "success": "操作成功",
+    "error": "发生错误",
+    "confirmDelete": "确定要删除吗？"
+  }
+} 

@@ -59,7 +59,6 @@ export async function POST(request: Request) {
       url: data.url,
       username: data.username || undefined,
       password: data.password || undefined,
-      isDefault: false,
       sshEnabled: data.sshEnabled || false,
       sshHost: data.sshHost || undefined,
       sshPort: data.sshPort || undefined,
@@ -69,6 +68,8 @@ export async function POST(request: Request) {
       localPort: data.sshEnabled ? testPort : undefined,
       remoteHost: remoteHost || undefined,  // 使用处理后的 remoteHost
       remotePort: data.remotePort || undefined,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
 
     const isConnected = await testClient.testConnection(10000)
@@ -165,7 +166,24 @@ export async function GET() {
     const clustersWithHealth = await Promise.all(
       clusters.map(async (cluster) => {
         try {
-          const client = await OpenSearchClient.getInstance(cluster)
+          const client = await OpenSearchClient.getInstance({
+            id: cluster.id,
+            name: cluster.name,
+            url: cluster.url,
+            username: cluster.username || undefined,
+            password: cluster.password || undefined,
+            sshEnabled: cluster.sshEnabled,
+            sshHost: cluster.sshHost || undefined,
+            sshPort: cluster.sshPort || undefined,
+            sshUser: cluster.sshUser || undefined,
+            sshPassword: cluster.sshPassword || undefined,
+            sshKeyFile: cluster.sshKeyFile || undefined,
+            localPort: cluster.localPort || undefined,
+            remoteHost: cluster.remoteHost || undefined,
+            remotePort: cluster.remotePort || undefined,
+            createdAt: cluster.createdAt,
+            updatedAt: cluster.updatedAt,
+          })
           const health = await client.getClusterHealth()
           return {
             ...cluster,

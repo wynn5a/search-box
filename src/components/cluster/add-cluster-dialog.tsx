@@ -56,8 +56,19 @@ const clusterFormSchema = z.object({
 
 type ClusterFormValues = z.infer<typeof clusterFormSchema>
 
-export function AddClusterDialog() {
-  const [open, setOpen] = useState(false)
+interface AddClusterDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
+  trigger?: React.ReactNode
+}
+
+export function AddClusterDialog({ 
+  open, 
+  onOpenChange,
+  onSuccess,
+  trigger 
+}: AddClusterDialogProps) {
   const [testingTunnel, setTestingTunnel] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
@@ -146,7 +157,7 @@ export function AddClusterDialog() {
     }
   }
 
-  const onSubmit = async (data: ClusterFormValues) => {
+  const onSubmit = async (values: z.infer<typeof clusterFormSchema>) => {
     try {
       setSubmitting(true)
       const response = await fetch("/api/clusters", {
@@ -154,7 +165,7 @@ export function AddClusterDialog() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(values),
       })
 
       if (!response.ok) {
@@ -170,8 +181,8 @@ export function AddClusterDialog() {
       // 触发集群添加事件
       eventBus.emit(EVENTS.CLUSTER_ADDED)
       
-      setOpen(false)
       form.reset()
+      onSuccess?.()
     } catch (error) {
       toast({
         title: "添加集群失败",
@@ -184,12 +195,9 @@ export function AddClusterDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <PlusCircle className="h-4 w-4" />
-          添加集群
-        </Button>
+        {trigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
