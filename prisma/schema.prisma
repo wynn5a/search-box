@@ -3,19 +3,19 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  QueryHistory  Query[]
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  QueryHistory Query[]
 }
 
 model Query {
@@ -28,27 +28,43 @@ model Query {
 }
 
 model Cluster {
-  id            String    @id @default(cuid())
+  id            String          @id @default(cuid())
   name          String
   url           String
   username      String?
   password      String?
-  isDefault     Boolean   @default(false)
-  sshEnabled    Boolean   @default(false)
+  isDefault     Boolean         @default(false)
+  sshEnabled    Boolean         @default(false)
   sshHost       String?
-  sshPort       Int?      @default(22)
+  sshPort       Int?            @default(22)
   sshUser       String?
   sshPassword   String?
   sshKeyFile    String?
   localPort     Int?
   remoteHost    String?
   remotePort    Int?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
   lastConnected DateTime?
+  QueryTemplate QueryTemplate[]
+}
+
+model QueryTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  method      String
+  path        String
+  body        String   @default("")
+  tags        String[] @default([])
+  category    String
+  clusterId   String
+  cluster     Cluster  @relation(fields: [clusterId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum Role {
   ADMIN
   USER
-} 
+}

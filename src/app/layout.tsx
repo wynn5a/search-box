@@ -18,24 +18,23 @@ export const revalidate = 0
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body className="h-screen overflow-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <DashboardLayout>
-            {children}
-          </DashboardLayout>
+          <DashboardLayout>{children}</DashboardLayout>
           <Toaster />
         </ThemeProvider>
       </body>
     </html>
   )
-} 
+}
