@@ -37,28 +37,16 @@ export async function GET(): Promise<NextResponse> {
         unhealthyClusters++
       }
     })
-
-    // 打印调试信息
-    console.log('Summary calculation:', {
-      clusters: clusters.map(c => ({
-        name: c.name,
-        indices: c.stats?.indices?.count,
-        storage: c.stats?.indices?.store?.size_in_bytes,
-        health: c.health?.status
-      })),
-      totalIndices,
-      totalStorage,
-      healthyClusters,
-      unhealthyClusters
-    })
-
     return {
-      totalClusters: clusters.length,
-      healthyClusters,
-      unhealthyClusters,
-      totalIndices,
-      totalStorage,
-    }
+      success: true,
+      data: {
+          totalClusters: clusters.length,
+          healthyClusters,
+          unhealthyClusters,
+          totalIndices,
+          totalStorage,
+      }
+  };
   }, {
     errorMessage: 'Failed to fetch clusters summary'
   })
