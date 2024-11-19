@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { Trash2, Settings, Play, Pause, RefreshCw, Lock } from "lucide-react"
+import { Trash2, Play, Pause, Lock } from "lucide-react"
 import { CreateIndexDialog } from "./create-index-dialog"
 import { cn } from "@/lib/utils"
 import {

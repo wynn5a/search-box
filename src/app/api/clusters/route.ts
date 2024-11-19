@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { handleApiRoute, validateRequestBody } from "@/lib/utils/api-utils"
+import { validateRequestBody } from "@/lib/utils/api-utils"
 import prisma from "@/lib/prisma"
 import { OpenSearchClient } from "@/lib/opensearch"
 

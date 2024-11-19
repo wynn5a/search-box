@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { Moon, Sun } from "lucide-react"
+import Link from "next/link"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { setTheme, theme } = useTheme()
@@ -12,9 +13,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <header className="flex-none border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <div className="mr-4 flex">
-            <a className="mr-6 flex items-center space-x-2" href="/">
+            <Link className="mr-6 flex items-center space-x-2" href="/">
               <span className="font-bold">Search Box</span>
-            </a>
+            </Link>
           </div>
           <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
             <Button

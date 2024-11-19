@@ -18,7 +18,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Badge } from "@/components/ui/badge"
 import { QueryHistoryItem } from "@/types/query"
-import { eventBus, EVENTS } from "@/lib/events"
+import { eventBus } from "@/lib/events"
 
 interface QueryHistoryDrawerProps {
   clusterId: string

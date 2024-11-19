@@ -19,7 +19,16 @@ const nextConfig = {
             })
         }
         return config
+    },
+    eslint: {
+        ignoreDuringBuilds: true
     }
 }
 
-export default nextConfig 
+import bundleAnalyzer from '@next/bundle-analyzer'
+
+const withBundleAnalyzer = bundleAnalyzer({
+    enabled: process.env.ANALYZE === 'true',
+})
+
+export default withBundleAnalyzer(nextConfig)

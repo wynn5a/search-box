@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { PlusCircle, Loader2, Network } from "lucide-react"
+import { Loader2, Network } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { eventBus, EVENTS } from "@/lib/events"
 

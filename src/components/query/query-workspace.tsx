@@ -2,68 +2,129 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-import { Play, Code, FileJson, Loader2 } from "lucide-react"
 import { Editor } from "@monaco-editor/react"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { QueryTemplateManager} from "./query-template-manager"
-import { type QueryTemplate } from "@/config/default-templates"
+import { useIndices } from "@/hooks/use-indices"
+import { useQueryExecution } from "@/hooks/use-query-execution"
+import { IndexSelector } from "./index-selector"
 import { EnhancedQueryResults } from "./enhanced-query-results"
+import { useToast } from "@/hooks/use-toast"
 import { useTheme } from "next-themes"
 import { Input } from "../ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Play, Loader2 } from "lucide-react"
+import { QueryTemplateManager} from "./query-template-manager"
+import { type QueryTemplate } from "@/config/default-templates"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 
 interface QueryWorkspaceProps {
   clusterId: string
 }
 
-interface Index {
-  index: string
+
+// 错误消息映射
+const ERROR_MESSAGES: Record<string, string> = {
+  // 索引相关
+  'resource_already_exists_exception': '索引已存在，如果要重新创建，请先删除现有索引',
+  'index_not_found_exception': '索引不存在，请检查索引名称是否正确',
+  'invalid_index_name_exception': '索引名称无效，不能包含特殊字符',
+  
+  // 查询相关
+  'parsing_exception': '查询语法错误，请检查查询语句格式',
+  'search_phase_execution_exception': '搜索执行错误，可能是查询语句有误',
+  'query_shard_exception': '查询分片出错，请检查查询条件',
+  
+  // 字段相关
+  'mapper_parsing_exception': '字段映射解析错误，请检查字段定义',
+  'illegal_argument_exception': '参数错误，请检查请求参数',
+  
+  // 集群相关
+  'cluster_block_exception': '集群当前被阻止执行此操作',
+  'no_shard_available_action_exception': '没有可用的分片，集群可能存在问题',
+  
+  // 通用错误
+  'validation_exception': '验证失败，请检查请求内容',
+  'action_request_validation_exception': '请求验证失败，请检查必填参数',
+  
+  // 权限相关
+  'security_exception': '没有执行此操作的权限，请检查用户权限',
+  'authorization_exception': '授权失败，请检查访问权限',
+  
+  // 其他常见错误
+  'version_conflict_engine_exception': '版本冲突，数据可能已被其他操作修改',
+  'document_missing_exception': '文档不存在',
+  'circuit_breaking_exception': '内存使用超出限制，请优化查询'
 }
 
+// 提取错误类型
+function extractErrorType(error: any): string {
+  // 处理 OpenSearch ResponseError
+  if (error?.details?.meta?.body?.error?.type) {
+    return error.details.meta.body.error.type
+  }
+
+  // 处理标准错误对象
+  if (error?.type) {
+    return error.type
+  }
+
+  // 处理嵌套的错误对象
+  if (error?.reason?.type) {
+    return error.reason.type
+  }
+
+  // 处理错误消息中的类型
+  if (error?.message) {
+    const matches = error.message.match(/(?:exception|error):\s*([a-z_]+_exception)/i)
+    return matches?.[1] || ''
+  }
+
+  return ''
+}
+
+// 获取错误的详细原因
+function getErrorReason(error: any): string {
+  if (typeof error === 'string') {
+    return error
+  }
+
+  // 处理 OpenSearch ResponseError
+  if (error?.meta?.body?.error?.reason) {
+    return error.meta.body.error.reason
+  }
+
+  if (error?.reason) {
+    return error.reason
+  }
+
+  if (error?.message) {
+    return error.message
+  }
+
+  return ''
+}
+
+// 获取友好的错误消息
+
 export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
+  const [selectedIndex, setSelectedIndex] = useState<string>("__placeholder__")
+  const [queryBody, setQueryBody] = useState("")
   const [method, setMethod] = useState<string>("GET")
   const [path, setPath] = useState<string>("")
-  const [body, setBody] = useState<string>("")
-  const [loading, setLoading] = useState<boolean>(false)
-  const [results, setResults] = useState<any>(null)
-  const [executionTime, setExecutionTime] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<"table" | "json">("table")
-  const [copied, setCopied] = useState(false)
   const [customTemplates, setCustomTemplates] = useState<QueryTemplate[]>([])
-  const [startTime, setStartTime] = useState<number>(0)
   const [editorHeight, setEditorHeight] = useState(200)
-  const [indices, setIndices] = useState<string[]>([])
-  const [selectedIndex, setSelectedIndex] = useState<string>("__placeholder__")
   const isDragging = useRef(false)
   const { toast } = useToast()
   const { theme } = useTheme()
+  
+  // 使用自定义 hooks
+  const { indices, refresh } = useIndices(clusterId)
+  const { loading: executing, results, executionTime, executeQuery, resetResults } = useQueryExecution(clusterId, {
+    onSuccess: refresh
+  })
 
-  // Fetch indices on mount
-  useEffect(() => {
-    const fetchIndices = async () => {
-      try {
-        const response = await fetch(`/api/clusters/${clusterId}/indices`)
-        if (!response.ok) throw new Error("Failed to fetch indices")
-        const { success, data } = await response.json()
-        if (success && Array.isArray(data)) {
-          setIndices(data)
-        }
-      } catch (error) {
-        console.error("Error fetching indices:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load indices",
-          variant: "destructive",
-        })
-      }
-    }
-
-    fetchIndices()
-  }, [clusterId, toast])
-
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // 处理编辑器拖拽调整大小
+  const handleMouseDown = () => {
     isDragging.current = true
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
@@ -88,7 +149,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
     }
   }, [handleMouseMove, handleMouseUp])
 
-  // Fetch custom templates on mount
+  // 加载自定义模板
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -109,69 +170,45 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
     fetchTemplates()
   }, [clusterId, toast])
 
-  const executeQuery = async () => {
-    try {
-      // Check if path contains {index} and validate index selection
-      if (path.includes("{index}") && (selectedIndex === "__placeholder__" || !selectedIndex)) {
-        toast({
-          title: "Index required",
-          description: "Please select an index for this query",
-          variant: "destructive",
-        })
-        return
-      }
+  // 处理模板选择
+  const handleTemplateSelect = (template: QueryTemplate) => {
+    resetResults()
+    setMethod(template.method)
+    setPath(template.path)
+    setQueryBody(template.body)
+  }
 
-      setLoading(true)
-      setStartTime(performance.now())
-      let parsedBody
-      try {
-        parsedBody = body && body.trim() !== '' ? JSON.parse(body) : undefined
-      } catch (e) {
-        toast({
-          title: "Invalid JSON format",
-          description: "Please check your request body format",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Replace {index} placeholder with selected index
-      const processedPath = path.replace("{index}", selectedIndex)
-
-      const response = await fetch(`/api/clusters/${clusterId}/query`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          method,
-          path: processedPath,
-          body: parsedBody,
-        }),
-      })
-
-      const data = await response.json()
-      setExecutionTime(performance.now() - startTime)
-      
-      if (!response.ok) {
-        setResults({ error: data.error || "Query failed" })
-        toast({
-          title: "Query failed",
-          description: data.error || "An error occurred while executing the query",
-          variant: "destructive",
-        })
-        return
-      }
-
-      setResults(data)
-    } catch (error) {
+  // 执行查询处理函数
+  const handleExecute = async () => {
+    // 检查路径中是否包含 {index} 并验证索引选择
+    if (path.includes("{index}") && (selectedIndex === "__placeholder__" || !selectedIndex)) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "需要选择索引",
+        description: "请从下拉列表中选择一个索引",
         variant: "destructive",
       })
-    } finally {
-      setLoading(false)
+      return
+    }
+
+    try {
+      // 解析请求体
+      let parsedBody
+      try {
+        parsedBody = queryBody && queryBody.trim() !== '' ? JSON.parse(queryBody) : undefined
+      } catch (e) {
+        toast({
+          title: "JSON 格式错误",
+          description: "请检查请求体的 JSON 格式是否正确",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // 替换路径中的 {index} 占位符
+      const processedPath = path.replace("{index}", selectedIndex)
+      await executeQuery(method, processedPath, parsedBody)
+    } catch (error) {
+      console.error("Error executing query:", error)
     }
   }
 
@@ -185,7 +222,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
               path ? {
                 method,
                 path,
-                body,
+                body: queryBody,
               } : undefined
             }
             onSaveTemplate={async (template) => {
@@ -238,15 +275,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                 })
               }
             }}
-            onSelectTemplate={(template) => {
-              setMethod(template.method)
-              setPath(template.path)
-              setBody(template.body)
-              toast({
-                title: "Template loaded",
-                description: "Query template has been loaded",
-              })
-            }}
+            onSelectTemplate={handleTemplateSelect}
           />
         </ResizablePanel>
         
@@ -275,50 +304,17 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                   className="flex-1"
                 />
                 {path.includes("{index}") && (
-                  <Select value={selectedIndex} onValueChange={setSelectedIndex}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select index" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <ScrollArea className="h-[200px]">
-                        <SelectItem value="__placeholder__" disabled>Select an index</SelectItem>
-                        <SelectItem value="*">All indices (*)</SelectItem>
-                        <SelectItem value="_all">All indices (_all)</SelectItem>
-                        {indices.filter(index => !index.startsWith(".")).length > 0 && (
-                          <>
-                            <div className="px-2 py-1.5 text-sm font-semibold">User Indices</div>
-                            {indices
-                              .filter(index => !index.startsWith("."))
-                              .map(index => (
-                                <SelectItem key={index} value={index}>
-                                  {index}
-                                </SelectItem>
-                              ))
-                            }
-                          </>
-                        )}
-                        {indices.filter(index => index.startsWith(".")).length > 0 && (
-                          <>
-                            <div className="px-2 py-1.5 text-sm font-semibold">System Indices</div>
-                            {indices
-                              .filter(index => index.startsWith("."))
-                              .map(index => (
-                                <SelectItem key={index} value={index}>
-                                  {index}
-                                </SelectItem>
-                              ))
-                            }
-                          </>
-                        )}
-                      </ScrollArea>
-                    </SelectContent>
-                  </Select>
+                  <IndexSelector
+                    indices={indices}
+                    selectedIndex={selectedIndex}
+                    onIndexChange={setSelectedIndex}
+                  />
                 )}
                 <Button 
-                  onClick={executeQuery}
-                  disabled={loading || !path || (path.includes("{index}") && (selectedIndex === "__placeholder__" || !selectedIndex))}
+                  onClick={handleExecute}
+                  disabled={executing || !path || (path.includes("{index}") && (selectedIndex === "__placeholder__" || !selectedIndex))}
                 >
-                  {loading ? (
+                  {executing ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Play className="h-4 w-4" />
@@ -333,8 +329,8 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                 <Editor
                   height="100%"
                   defaultLanguage="json"
-                  value={body}
-                  onChange={(value) => setBody(value || "")}
+                  value={queryBody}
+                  onChange={(value) => setQueryBody(value || "")}
                   theme={theme === 'dark' ? 'vs-dark' : 'light'}
                   options={{
                     minimap: { enabled: false },
@@ -351,7 +347,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
             </div>
 
             <div className="flex-1 min-h-0 p-4">
-              <div className="h-full">
+              <div className="h-full border rounded-md">
                 <EnhancedQueryResults
                   results={results}
                   executionTime={executionTime}

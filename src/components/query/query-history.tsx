@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Clock, Trash2 } from "lucide-react"
 import { QueryHistoryItem } from "@/types/query"
-import { eventBus, EVENTS } from "@/lib/events"
+import { eventBus } from "@/lib/events"
 
 interface QueryHistoryProps {
   clusterId: string

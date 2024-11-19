@@ -3,11 +3,6 @@ import { getClusterConfig } from "@/lib/clusters"
 import { OpenSearchClient } from "@/lib/opensearch"
 import { handleApiRoute } from "@/lib/utils/api-utils"
 
-interface ApiResponse<T> {
-  success: boolean
-  data?: T
-  error?: string
-}
 
 export async function GET(request: NextRequest, props: { params: Promise<{ clusterId: string }> }): Promise<Response> {
   const params = await props.params;

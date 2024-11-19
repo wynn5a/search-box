@@ -1,37 +1,26 @@
 import * as React from "react"
+
 import { cn } from "@/lib/utils"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
-interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
-  containerClassName?: string
-}
-
-const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, containerClassName, ...props }, ref) => (
-    <ScrollArea className={cn("relative w-full h-full", containerClassName)}>
-      <div className="relative w-full h-full pb-3">
-        <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-      </div>
-      <ScrollBar orientation="horizontal" />
-      <ScrollBar orientation="vertical" />
-    </ScrollArea>
-  )
-)
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-auto">
+    <table
+      ref={ref}
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    />
+  </div>
+))
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead
-    ref={ref}
-    className={cn(
-      "sticky top-0 z-10 bg-background border-b",
-      "[&_tr]:border-b",
-      className
-    )}
-    {...props}
-  />
+  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 

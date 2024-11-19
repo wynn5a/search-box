@@ -44,7 +44,7 @@ export const defaultTemplates: QueryTemplate[] = [
     name: "List All Indices",
     description: "List all indices with their basic information",
     method: "GET",
-    path: "/_cat/indices?v=true&s=index",
+    path: "/_cat/indices?v=true&s=index&format=json",
     body: "",
     tags: ["indices", "list", "cat"],
     category: "Index Management",

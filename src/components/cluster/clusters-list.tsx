@@ -478,7 +478,7 @@ export function ClustersList() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除集群</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除集群 "{clusterToDelete?.name}" ���？此操作无法撤销。
+              确定要删除集群 "{clusterToDelete?.name}"？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

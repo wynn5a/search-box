@@ -1,7 +1,6 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { ClusterConfig } from "@/types/cluster"
@@ -51,11 +50,6 @@ export function ClusterCard({ cluster }: ClusterCardProps) {
             <div className={`h-2 w-2 rounded-full ${getStatusDotColor(cluster.health?.status)}`} />
             <CardTitle className="text-lg font-medium">
               {cluster.name}
-              {cluster.isDefault && (
-                <Badge variant="secondary" className="ml-2">
-                  默认
-                </Badge>
-              )}
             </CardTitle>
           </div>
           <CardDescription>{cluster.url}</CardDescription>

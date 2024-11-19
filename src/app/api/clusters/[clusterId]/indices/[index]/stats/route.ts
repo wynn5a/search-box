@@ -19,7 +19,6 @@ export async function GET(
 
     const client = await OpenSearchClient.getInstance(cluster)
     const stats = await client.getIndexStats(params.index)
-    console.log(stats)
     return {
       success: true,
       data: stats || {}

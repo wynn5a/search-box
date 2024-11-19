@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -41,8 +41,6 @@ export function QueryTemplateManager({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("")
-  const [tags, setTags] = useState<string[]>([])
   const { toast } = useToast()
 
   const categories = ["all", ...Array.from(new Set([

@@ -52,7 +52,6 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
       if (!response.ok) throw new Error("Failed to fetch indices")
       const data = await response.json()
-      console.log(data)
       setIndices(data.data || [])
     } catch (error) {
       console.error(error)

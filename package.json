@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "analyze": "ANALYZE=true next build",
+    "lint": "next lint",
+    "find-deadcode": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -27,6 +29,7 @@
     "@radix-ui/react-tabs": "^1.1.1",
     "@radix-ui/react-toast": "^1.2.2",
     "@radix-ui/react-tooltip": "^1.1.3",
+    "@tanstack/react-table": "^8.20.5",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
@@ -42,21 +45,20 @@
     "ssh2": "^1.16.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "tunnel-ssh": "^5.1.2",
     "vaul": "^1.1.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.0.3",
     "@types/d3": "^7.4.3",
     "@types/node": "^20",
-    "@types/node-fetch": "^2.6.11",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/ssh2": "^1.15.1",
-    "@types/tunnel-ssh": "^5.0.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "node-loader": "^2.0.0",
     "postcss": "^8.4.47",
     "prisma": "^5.22.0",

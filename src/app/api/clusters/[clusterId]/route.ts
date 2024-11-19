@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { tunnelManager } from "@/lib/tunnel-manager"
-import { ClusterConfig } from "@/types/cluster"
 
 export async function DELETE(
     request: Request,
@@ -47,7 +46,6 @@ export async function GET(
 ) {
     try {
         const clusterId = (await context.params).clusterId;
-        console.log("clusterId type:", typeof clusterId, "value:", clusterId);
         
         if (!clusterId) {
             return NextResponse.json({ error: "Invalid cluster ID" }, { status: 400 });
