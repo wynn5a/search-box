@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
+import { ScrollArea } from "../ui/scroll-area"
 
 interface IndexInfo {
   health: string
@@ -149,6 +150,7 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
       </div>
 
       <div className="rounded-lg border">
+        <ScrollArea className="h-[calc(100vh-450px)]">
         <Table>
           <TableHeader>
             <TableRow>
@@ -200,6 +202,7 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
             )}
           </TableBody>
         </Table>
+        </ScrollArea>
       </div>
     </div>
   )

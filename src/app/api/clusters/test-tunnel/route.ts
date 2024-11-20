@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server"
 import { handleApiRoute } from "@/lib/utils/api-utils"
 import { tunnelManager } from "@/lib/tunnel-manager"
 import { ApiError } from "@/lib/errors/api-error"

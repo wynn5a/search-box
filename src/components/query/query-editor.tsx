@@ -54,7 +54,7 @@ export function QueryEditor({
       } catch (error) {
         toast({
           title: "获取索引列表失败",
-          description: "请稍后重试",
+          description: error instanceof Error ? error.message : "请稍后重试",
           variant: "destructive",
         })
       }
@@ -256,10 +256,10 @@ export function QueryEditor({
       await navigator.clipboard.writeText(JSON.stringify(result, null, 2))
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
+    } catch (error) {
       toast({
         title: "复制失败",
-        description: "无法访问剪贴板",
+        description: error instanceof Error ? error.message : "无法访问剪贴板",
         variant: "destructive",
       })
     }

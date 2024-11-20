@@ -14,7 +14,6 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Editor } from "@monaco-editor/react"
 import { Copy, Download, Trash2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 
 interface QueryResultsProps {
   result: any
@@ -37,7 +36,6 @@ export function QueryResults({
 }: QueryResultsProps) {
   const [columns, setColumns] = useState<string[]>([])
   const [rows, setRows] = useState<any[]>([])
-  const { toast } = useToast()
 
   useEffect(() => {
     if (!result) return

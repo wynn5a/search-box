@@ -74,9 +74,18 @@ class TunnelManager {
 
   private async getAvailablePort(startPort: number): Promise<number> {
     let port = startPort
-    while (!(await this.isPortAvailable(port))) {
+    let attempts = 0
+    const maxAttempts = 5  // 最多尝试5次
+
+    while (!(await this.isPortAvailable(port)) && attempts < maxAttempts) {
       port++
+      attempts++
     }
+
+    if (attempts >= maxAttempts) {
+      throw new Error(`Unable to find available port after ${maxAttempts} attempts starting from ${startPort}`)
+    }
+
     return port
   }
 
@@ -88,7 +97,12 @@ class TunnelManager {
       return existingTunnel.server
     }
 
-    const localPort = await this.getAvailablePort(config.localPort)
+    let localPort: number
+    try {
+      localPort = await this.getAvailablePort(config.localPort)
+    } catch (error: any) {
+      throw new Error(`Failed to create tunnel: ${error.message}`)
+    }
 
     return new Promise((resolve, reject) => {
       const server = createServer(async (connection) => {
@@ -97,7 +111,19 @@ class TunnelManager {
         if (tunnelInfo) {
           tunnelInfo.connections.add(connection)
           tunnelInfo.lastUsed = Date.now()
+          tunnelInfo.sshClient = ssh
         }
+
+        connection.on('error', (err) => {
+          console.error(`Connection error for cluster ${clusterId}:`, err)
+          connection.end()
+        })
+
+        connection.on('end', () => {
+          if (tunnelInfo) {
+            tunnelInfo.connections.delete(connection)
+          }
+        })
 
         ssh.on('ready', () => {
           ssh.forwardOut(
@@ -107,29 +133,19 @@ class TunnelManager {
             config.remotePort,
             (err, stream) => {
               if (err) {
+                console.error(`SSH forward error for cluster ${clusterId}:`, err)
                 connection.end()
                 return
               }
 
-              connection.pipe(stream)
-              stream.pipe(connection)
-
-              connection.on('close', () => {
-                stream.end()
-                ssh.end()
-                const tunnelInfo = this.tunnels.get(clusterId)
-                if (tunnelInfo) {
-                  tunnelInfo.connections.delete(connection)
-                }
-              })
+              connection.pipe(stream).pipe(connection)
             }
           )
         })
 
         ssh.on('error', (err) => {
-          console.error(`SSH connection error for cluster ${clusterId}:`, err)
+          console.error(`SSH error for cluster ${clusterId}:`, err)
           connection.end()
-          const tunnelInfo = this.tunnels.get(clusterId)
           if (tunnelInfo) {
             tunnelInfo.connections.delete(connection)
           }
@@ -139,27 +155,38 @@ class TunnelManager {
           host: config.sshHost,
           port: config.sshPort,
           username: config.sshUser,
-          password: config.sshPassword,
-          privateKey: config.sshKeyFile,
+          readyTimeout: 30000,
           keepaliveInterval: 10000,
+        }
+
+        if (config.sshPassword) {
+          sshConfig.password = config.sshPassword
+        } else if (config.sshKeyFile) {
+          try {
+            const fs = require('fs')
+            sshConfig.privateKey = fs.readFileSync(config.sshKeyFile)
+          } catch (error) {
+            console.error(`Failed to read SSH key file for cluster ${clusterId}:`, error)
+            connection.end()
+            return
+          }
         }
 
         ssh.connect(sshConfig)
       })
 
       server.on('error', (err) => {
-        console.error(`Tunnel server error for cluster ${clusterId}:`, err)
-        this.tunnels.delete(clusterId)
+        console.error(`Server error for cluster ${clusterId}:`, err)
         reject(err)
       })
 
       server.listen(localPort, '127.0.0.1', () => {
-        console.log(`SSH tunnel created for cluster ${clusterId} on port ${localPort}`)
         this.tunnels.set(clusterId, {
           server,
           connections: new Set(),
           lastUsed: Date.now()
         })
+        console.log(`Tunnel created for cluster ${clusterId} on port ${localPort}`)
         resolve(server)
       })
     })
@@ -212,6 +239,18 @@ class TunnelManager {
 
   public getTunnelStatus(clusterId: string): boolean {
     return this.tunnels.has(clusterId)
+  }
+
+  public getActualPort(clusterId: string): number | null {
+    const tunnelInfo = this.tunnels.get(clusterId)
+    if (!tunnelInfo) {
+      return null
+    }
+    const address = tunnelInfo.server.address()
+    if (typeof address === 'string' || !address) {
+      return null
+    }
+    return address.port
   }
 
   // 清理所有资源

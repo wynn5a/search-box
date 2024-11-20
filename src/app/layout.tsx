@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className="h-screen overflow-hidden">
+      <body className="h-screen">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

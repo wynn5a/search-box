@@ -15,10 +15,15 @@ class OpenSearchClient {
     let nodeUrl = config.url
 
     // 如果启用了 SSH 隧道，使用本地转发端口
-    if (config.sshEnabled && config.localPort) {
+    if (config.sshEnabled) {
       const localUrl = new URL(config.url)
       localUrl.hostname = '127.0.0.1'
-      localUrl.port = config.localPort.toString()
+      // 获取实际分配的端口
+      const actualPort = tunnelManager.getActualPort(config.id)
+      if (!actualPort) {
+        throw new Error('Failed to get tunnel port')
+      }
+      localUrl.port = actualPort.toString()
       nodeUrl = localUrl.toString()
     }
 
@@ -30,6 +35,9 @@ class OpenSearchClient {
       } : undefined,
       ssl: {
         rejectUnauthorized: false,
+        requestCert: true,
+        minVersion: 'TLSv1.2',
+        maxVersion: 'TLSv1.3'
       },
       requestTimeout: 30000,
       sniffOnStart: false,
@@ -46,23 +54,48 @@ class OpenSearchClient {
     try {
       // 如果启用了 SSH 隧道，先创建隧道
       if (config.sshEnabled && config.id && config.sshHost && config.sshUser) {
-        await tunnelManager.createTunnel(config.id, {
-          sshHost: config.sshHost,
-          sshPort: config.sshPort || 22,
-          sshUser: config.sshUser,
-          sshPassword: config.sshPassword || undefined,
-          sshKeyFile: config.sshKeyFile || undefined,
-          localPort: config.localPort || 9200,
-          remoteHost: config.remoteHost || 'localhost',
-          remotePort: config.remotePort || 9200,
-        })
+        try {
+          await tunnelManager.createTunnel(config.id, {
+            sshHost: config.sshHost,
+            sshPort: config.sshPort || 22,
+            sshUser: config.sshUser,
+            sshPassword: config.sshPassword || undefined,
+            sshKeyFile: config.sshKeyFile || undefined,
+            localPort: config.localPort || 9300,
+            remoteHost: config.remoteHost || 'localhost',
+            remotePort: config.remotePort || 9200,
+          })
+        } catch (error: any) {
+          console.error('Failed to create SSH tunnel:', error)
+          throw new ApiError(
+            `Failed to create SSH tunnel: ${error.message}`,
+            500,
+            error
+          )
+        }
 
         // 添加延迟，等待隧道完全建立
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 2000))
       }
 
       if (!OpenSearchClient.instances.has(key)) {
-        OpenSearchClient.instances.set(key, new OpenSearchClient(config))
+        const instance = new OpenSearchClient(config)
+        // 测试连接
+        try {
+          await instance.client.cluster.health({})
+          OpenSearchClient.instances.set(key, instance)
+        } catch (error) {
+          console.error('Failed to connect to OpenSearch:', error)
+          // 如果是SSH隧道连接，关闭隧道
+          if (config.sshEnabled && config.id) {
+            await tunnelManager.closeTunnel(config.id)
+          }
+          throw new ApiError(
+            'Failed to connect to OpenSearch cluster',
+            500,
+            error
+          )
+        }
       }
       
       return OpenSearchClient.instances.get(key)!
@@ -71,7 +104,11 @@ class OpenSearchClient {
       if (config.sshEnabled && config.id) {
         await tunnelManager.closeTunnel(config.id)
       }
-      throw new ApiError('Failed to create OpenSearch client', 500, error)
+      throw error instanceof ApiError ? error : new ApiError(
+        'Failed to create OpenSearch client',
+        500,
+        error
+      )
     }
   }
 
@@ -86,9 +123,10 @@ class OpenSearchClient {
         const result = await operation()
         return result ?? {} as T
       } catch (error) {
+        console.error(`Operation failed (attempt ${i + 1}/${this.retryCount}):`, error)
         lastError = error as Error
         if (i < this.retryCount - 1) {
-          await new Promise(resolve => setTimeout(resolve, this.retryDelay * (i + 1)))
+          await new Promise(resolve => setTimeout(resolve, this.retryDelay * Math.pow(2, i)))
         }
       }
     }
