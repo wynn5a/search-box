@@ -8,7 +8,8 @@
     "start": "next start",
     "analyze": "ANALYZE=true next build",
     "lint": "next lint",
-    "find-deadcode": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "find-deadcode": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "encrypt-passwords": "ts-node --project scripts/tsconfig.json scripts/encrypt-passwords.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -54,7 +55,7 @@
   "devDependencies": {
     "@next/bundle-analyzer": "^15.0.3",
     "@types/d3": "^7.4.3",
-    "@types/node": "^20",
+    "@types/node": "^22.9.1",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/ssh2": "^1.15.1",
@@ -66,6 +67,7 @@
     "postcss": "^8.4.47",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.14",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
   }
 }

@@ -2,6 +2,7 @@ import { Client } from '@opensearch-project/opensearch'
 import { ClusterConfig } from '@/types/cluster'
 import { tunnelManager } from './tunnel-manager'
 import { ApiError } from './errors/api-error'
+import { decrypt } from './utils/crypto'
 
 class OpenSearchClient {
   private static instances: Map<string, OpenSearchClient> = new Map()
@@ -27,12 +28,33 @@ class OpenSearchClient {
       nodeUrl = localUrl.toString()
     }
 
+    // 创建客户端时不打印敏感信息
+    console.log('Creating OpenSearch client:', {
+      node: nodeUrl,
+      auth: config.username && config.password ? {
+        username: config.username,
+        password: '***'
+      } : undefined
+    })
+
+    let auth: { username: string; password: string } | undefined = undefined
+    
+    if (config.username && config.password) {
+      try {
+        const decryptedPassword = decrypt(config.password)
+        auth = {
+          username: config.username,
+          password: decryptedPassword,
+        }
+      } catch (error) {
+        console.error('Failed to decrypt OpenSearch password:', error)
+        throw new ApiError('Failed to decrypt OpenSearch password', 500)
+      }
+    }
+
     this.client = new Client({
       node: nodeUrl,
-      auth: config.username ? {
-        username: config.username,
-        password: config.password || '',
-      } : undefined,
+      auth,
       ssl: {
         rejectUnauthorized: false,
         requestCert: true,

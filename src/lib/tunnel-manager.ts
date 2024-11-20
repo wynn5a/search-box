@@ -1,7 +1,8 @@
 import { Client } from 'ssh2'
 import { createServer, Server } from 'net'
-import { ConnectConfig } from 'ssh2'
+import { ConnectConfig, AuthenticationType, AuthHandlerMiddleware } from 'ssh2'
 import { EventEmitter } from 'events'
+import { decrypt } from './utils/crypto'
 
 // 设置全局最大监听器数量
 EventEmitter.defaultMaxListeners = 20
@@ -31,7 +32,7 @@ class TunnelManager {
   private exitHandler: () => Promise<void>
 
   private constructor() {
-    // 启动定期清理
+    // 启动定期清理，每分钟检查一次
     this.cleanupInterval = setInterval(() => this.cleanupUnusedTunnels(), 60000)
 
     // 创建一个单一的退出处理函数
@@ -93,7 +94,7 @@ class TunnelManager {
     // 如果已存在隧道，更新最后使用时间并返回
     const existingTunnel = this.tunnels.get(clusterId)
     if (existingTunnel) {
-      existingTunnel.lastUsed = Date.now()
+      this.updateTunnelLastUsed(clusterId)
       return existingTunnel.server
     }
 
@@ -125,7 +126,17 @@ class TunnelManager {
           }
         })
 
+        ssh.on('error', (err) => {
+          console.error(`SSH error for cluster ${clusterId}:`, err)
+          connection.end()
+          if (tunnelInfo) {
+            tunnelInfo.connections.delete(connection)
+          }
+        })
+
         ssh.on('ready', () => {
+          console.debug(`SSH connection ready for cluster ${clusterId}`)
+          console.debug(`SSH Authentication Successful [${clusterId}]`)
           ssh.forwardOut(
             '127.0.0.1',
             localPort,
@@ -137,34 +148,163 @@ class TunnelManager {
                 connection.end()
                 return
               }
-
+              console.debug(`SSH tunnel established for cluster ${clusterId}`)
               connection.pipe(stream).pipe(connection)
             }
           )
         })
 
-        ssh.on('error', (err) => {
-          console.error(`SSH error for cluster ${clusterId}:`, err)
-          connection.end()
-          if (tunnelInfo) {
-            tunnelInfo.connections.delete(connection)
+        ssh.on('greeting', (greeting: string) => {
+          console.debug(`SSH Greeting [${clusterId}]:`, greeting)
+        })
+
+        ssh.on('banner', (banner: string) => {
+          console.debug(`SSH Banner [${clusterId}]:`, banner)
+        })
+
+        ssh.on('handshake', (negotiated: any) => {
+          console.debug(`SSH Handshake [${clusterId}]:`, negotiated)
+        })
+
+        ssh.on('change password', (message: string) => {
+          console.debug(`SSH Password Change Request [${clusterId}]:`, message)
+        })
+
+        ssh.on('keyboard-interactive', (name: string, instructions: string, lang: string, prompts: any[], finish: (responses: string[]) => void) => {
+          if (config.sshPassword && prompts.length > 0) {
+            finish([config.sshPassword])
+          } else {
+            finish([])
           }
+        })
+
+        ssh.on('error', (err) => {
+          console.debug(`SSH Authentication Error [${clusterId}]:`, err.message)
         })
 
         const sshConfig: ConnectConfig = {
           host: config.sshHost,
           port: config.sshPort,
           username: config.sshUser,
-          readyTimeout: 30000,
-          keepaliveInterval: 10000,
+          keepaliveInterval: 10000,  // 每10秒发送一次 keepalive
+          readyTimeout: 30000,       // 30秒连接超时
+          debug: (msg: string) => console.debug(`SSH Debug [${clusterId}]: ${msg}`),
+          algorithms: {
+            kex: [
+              'ecdh-sha2-nistp256',
+              'ecdh-sha2-nistp384',
+              'ecdh-sha2-nistp521',
+              'diffie-hellman-group-exchange-sha256',
+              'diffie-hellman-group14-sha256',
+              'diffie-hellman-group14-sha1'
+            ]
+          }
         }
 
+        let retryCount = 0
+        const MAX_RETRIES = 3
+        const RETRY_DELAY = 1000
+        let isConnected = false
+        let lastActivity = Date.now()
+        const ACTIVITY_TIMEOUT = 30000  // 30 seconds
+
+        const attemptConnection = () => {
+          if (retryCount >= MAX_RETRIES) {
+            console.error(`SSH connection failed after ${MAX_RETRIES} attempts for cluster ${clusterId}`)
+            connection.end()
+            return
+          }
+          ssh.connect(sshConfig)
+        }
+
+        // 设置活动检查定时器
+        const activityTimer = setInterval(() => {
+          const inactiveTime = Date.now() - lastActivity
+          if (isConnected && inactiveTime > ACTIVITY_TIMEOUT) {
+            console.warn(`SSH connection inactive for ${Math.round(inactiveTime / 1000)}s, reconnecting...`)
+            ssh.end()
+            isConnected = false
+            retryCount = 0
+            setTimeout(attemptConnection, RETRY_DELAY)
+          }
+        }, 10000)  // 每10秒检查一次
+
+        ssh.on('ready', () => {
+          console.log(`SSH connection ready for cluster ${clusterId}`)
+          isConnected = true
+          lastActivity = Date.now()
+          retryCount = 0  // 重置重试计数
+        })
+
+        ssh.on('error', (err) => {
+          console.error(`SSH connection error for cluster ${clusterId}:`, err)
+          isConnected = false
+          retryCount++
+          if (retryCount < MAX_RETRIES) {
+            console.log(`Retrying SSH connection for cluster ${clusterId} (attempt ${retryCount + 1}/${MAX_RETRIES})...`)
+            setTimeout(attemptConnection, RETRY_DELAY)
+          } else {
+            connection.end()
+          }
+        })
+
+        ssh.on('close', () => {
+          console.log(`SSH connection closed for cluster ${clusterId}`)
+          isConnected = false
+          connection.end()
+          clearInterval(activityTimer)  // 清理定时器
+        })
+
+        ssh.on('end', () => {
+          console.log(`SSH connection ended for cluster ${clusterId}`)
+          isConnected = false
+          connection.end()
+          clearInterval(activityTimer)  // 清理定时器
+        })
+
+        // 更新活动时间的调试消息处理
+        const originalDebug = sshConfig.debug
+        sshConfig.debug = (msg: string) => {
+          originalDebug?.(msg)
+          if (msg.includes('Outbound:') || msg.includes('Inbound:')) {
+            lastActivity = Date.now()
+          }
+        }
+
+        // 添加密码认证
         if (config.sshPassword) {
-          sshConfig.password = config.sshPassword
+          try {
+            // 验证密码格式
+            if (!config.sshPassword.includes(':')) {
+              console.warn(`SSH Warning [${clusterId}]: Password appears to be unencrypted, attempting to use as plain text`)
+              sshConfig.password = config.sshPassword
+            } else {
+              // 解密密码
+              const decryptedPassword = decrypt(config.sshPassword)
+              sshConfig.password = decryptedPassword
+              console.debug(`SSH Debug [${clusterId}]: Password decrypted successfully`)
+            }
+            
+            // 添加密码认证方法
+            sshConfig.authHandler = ['password'] as AuthenticationType[]
+          } catch (error) {
+            console.error(`Failed to process SSH password for cluster ${clusterId}:`, error)
+            connection.end()
+            return
+          }
         } else if (config.sshKeyFile) {
           try {
             const fs = require('fs')
-            sshConfig.privateKey = fs.readFileSync(config.sshKeyFile)
+            const privateKey = fs.readFileSync(config.sshKeyFile)
+            sshConfig.privateKey = privateKey
+            
+            // 检查密钥格式
+            if (!privateKey.toString().includes('PRIVATE KEY')) {
+              throw new Error('Invalid SSH private key format')
+            }
+
+            // 添加密钥认证方法
+            sshConfig.authHandler = ['publickey'] as AuthenticationType[]
           } catch (error) {
             console.error(`Failed to read SSH key file for cluster ${clusterId}:`, error)
             connection.end()
@@ -172,22 +312,27 @@ class TunnelManager {
           }
         }
 
-        ssh.connect(sshConfig)
+        attemptConnection()
+      })
+
+      // 在创建服务器时就初始化和存储 tunnelInfo
+      const tunnelInfo: TunnelInfo = {
+        server,
+        connections: new Set(),
+        lastUsed: Date.now(),
+        sshClient: undefined
+      }
+      this.tunnels.set(clusterId, tunnelInfo)
+
+      server.listen(localPort, '127.0.0.1', () => {
+        console.log(`Tunnel server listening on port ${localPort} for cluster ${clusterId}`)
+        resolve(server)
       })
 
       server.on('error', (err) => {
         console.error(`Server error for cluster ${clusterId}:`, err)
+        this.tunnels.delete(clusterId)
         reject(err)
-      })
-
-      server.listen(localPort, '127.0.0.1', () => {
-        this.tunnels.set(clusterId, {
-          server,
-          connections: new Set(),
-          lastUsed: Date.now()
-        })
-        console.log(`Tunnel created for cluster ${clusterId} on port ${localPort}`)
-        resolve(server)
       })
     })
   }
@@ -225,15 +370,25 @@ class TunnelManager {
 
   private async cleanupUnusedTunnels() {
     const now = Date.now()
-    const timeout = 5 * 60 * 1000 // 5 minutes
+    const IDLE_TIMEOUT = 5 * 60 * 1000  // 5 minutes in milliseconds
 
+    console.debug('Running tunnel cleanup check...')
+    
     // 使用 Array.from 来避免迭代器问题
     const entries = Array.from(this.tunnels.entries())
     for (const [clusterId, tunnelInfo] of entries) {
-      if (now - tunnelInfo.lastUsed > timeout && tunnelInfo.connections.size === 0) {
-        console.log(`Cleaning up unused tunnel for cluster ${clusterId}`)
+      const idleTime = now - tunnelInfo.lastUsed
+      if (idleTime > IDLE_TIMEOUT) {
+        console.log(`Tunnel ${clusterId} has been idle for ${Math.round(idleTime / 1000)}s, cleaning up...`)
         await this.closeTunnel(clusterId)
       }
+    }
+  }
+
+  public updateTunnelLastUsed(clusterId: string) {
+    const tunnelInfo = this.tunnels.get(clusterId)
+    if (tunnelInfo) {
+      tunnelInfo.lastUsed = Date.now()
     }
   }
 
