@@ -1,15 +1,42 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import Editor from "@monaco-editor/react"
+import Editor, { useMonaco } from "@monaco-editor/react"
+import { useEffect } from "react"
 
 interface QueryBodyProps {
   value: string
   onChange: (value: string) => void
   readOnly?: boolean
+  isBulkOperation?: boolean
 }
 
-export function QueryBody({ value, onChange, readOnly = false }: QueryBodyProps) {
+export function QueryBody({ 
+  value, 
+  onChange, 
+  readOnly = false,
+  isBulkOperation = false 
+}: QueryBodyProps) {
+  const monaco = useMonaco()
+
+  useEffect(() => {
+    if (monaco) {
+      // 为 bulk 操作创建自定义语言
+      monaco.languages.register({ id: 'ndjson' })
+      monaco.languages.setMonarchTokensProvider('ndjson', {
+        tokenizer: {
+          root: [
+            [/".*?"/, 'string'],
+            [/[{}\[\],]/, 'delimiter'],
+            [/[0-9]+/, 'number'],
+            [/true|false|null/, 'keyword'],
+            [/[a-zA-Z_]\w*/, 'identifier'],
+          ]
+        }
+      })
+    }
+  }, [monaco])
+
   return (
     <Card className="flex flex-col h-full min-h-0">
       <div className="border-b p-2 text-sm text-muted-foreground">
@@ -18,7 +45,7 @@ export function QueryBody({ value, onChange, readOnly = false }: QueryBodyProps)
       <div className="flex-1 min-h-0">
         <Editor
           height="100%"
-          defaultLanguage="json"
+          defaultLanguage={isBulkOperation ? "ndjson" : "json"}
           value={value}
           onChange={(value) => onChange(value || '')}
           options={{
@@ -27,12 +54,14 @@ export function QueryBody({ value, onChange, readOnly = false }: QueryBodyProps)
             lineNumbers: 'on',
             scrollBeyondLastLine: false,
             automaticLayout: true,
-            formatOnPaste: true,
-            formatOnType: true,
+            formatOnPaste: !isBulkOperation,
+            formatOnType: !isBulkOperation,
             readOnly: readOnly,
+            // 禁用 JSON 验证
+            validate: !isBulkOperation,
           }}
         />
       </div>
     </Card>
   )
-} 
+}

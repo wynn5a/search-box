@@ -15,6 +15,8 @@ import { Play, Loader2 } from "lucide-react"
 import { QueryTemplateManager} from "./query-template-manager"
 import { type QueryTemplate } from "@/config/default-templates"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import { TemplateGeneratorButton } from "./template-generator-button"
+import { useOpenSearchClient } from "@/hooks/use-opensearch-client"
 
 interface QueryWorkspaceProps {
   clusterId: string
@@ -36,6 +38,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
   const { loading: executing, results, executionTime, executeQuery, resetResults } = useQueryExecution(clusterId, {
     onSuccess: refresh
   })
+  const client = useOpenSearchClient(clusterId)
 
   // 处理编辑器拖拽调整大小
   const handleMouseDown = () => {
@@ -222,6 +225,16 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                     indices={indices}
                     selectedIndex={selectedIndex}
                     onIndexChange={setSelectedIndex}
+                  />
+                )}
+                {selectedIndex !== "__placeholder__" && path.includes("/_doc") 
+                && selectedIndex !== "*"
+                && selectedIndex !== "_all"
+                && (
+                  <TemplateGeneratorButton
+                    client={client}
+                    index={selectedIndex}
+                    onGenerated={setQueryBody}
                   />
                 )}
                 <Button 

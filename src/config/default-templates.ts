@@ -210,5 +210,50 @@ export const defaultTemplates: QueryTemplate[] = [
     category: "Cluster Management",
     isDefault: true,
     docUrl: "https://opensearch.org/docs/latest/api-reference/nodes-apis/nodes-stats/",
+  },
+  // Document Operations
+  {
+    id: "insert-document",
+    name: "Insert Document",
+    description: "Insert a single document into an index",
+    method: "POST",
+    path: "/{index}/_doc",
+    body: `{
+  "field1": "value1",
+  "field2": "value2",
+  "field3": "2024-01-01",
+  "field4": 100,
+  "field5": {
+    "nested1": "value",
+    "nested2": 42
+  },
+  "field6": ["tag1", "tag2"],
+  "field7": true
+}`,
+    tags: ["document", "insert", "index"],
+    category: "Document Operations",
+    isDefault: true,
+    docUrl: "https://opensearch.org/docs/latest/api-reference/document-apis/index-document/",
+  },
+  {
+    id: "bulk-insert",
+    name: "Bulk Insert Documents",
+    description: "Insert multiple documents in a single request",
+    method: "POST",
+    path: "/_bulk",
+    body: `{ "index": { "_index": "my-index" } }
+{
+  "field1": "doc1-value1",
+  "field2": "doc1-value2"
+}
+{ "index": { "_index": "my-index" } }
+{
+  "field1": "doc2-value1",
+  "field2": "doc2-value2"
+}`,
+    tags: ["document", "bulk", "insert", "index"],
+    category: "Document Operations",
+    isDefault: true,
+    docUrl: "https://opensearch.org/docs/latest/api-reference/document-apis/bulk/",
   }
 ];

@@ -136,7 +136,6 @@ class TunnelManager {
 
         ssh.on('ready', () => {
           console.debug(`SSH connection ready for cluster ${clusterId}`)
-          console.debug(`SSH Authentication Successful [${clusterId}]`)
           ssh.forwardOut(
             '127.0.0.1',
             localPort,
@@ -154,22 +153,6 @@ class TunnelManager {
           )
         })
 
-        ssh.on('greeting', (greeting: string) => {
-          console.debug(`SSH Greeting [${clusterId}]:`, greeting)
-        })
-
-        ssh.on('banner', (banner: string) => {
-          console.debug(`SSH Banner [${clusterId}]:`, banner)
-        })
-
-        ssh.on('handshake', (negotiated: any) => {
-          console.debug(`SSH Handshake [${clusterId}]:`, negotiated)
-        })
-
-        ssh.on('change password', (message: string) => {
-          console.debug(`SSH Password Change Request [${clusterId}]:`, message)
-        })
-
         ssh.on('keyboard-interactive', (name: string, instructions: string, lang: string, prompts: any[], finish: (responses: string[]) => void) => {
           if (config.sshPassword && prompts.length > 0) {
             finish([config.sshPassword])
@@ -179,7 +162,7 @@ class TunnelManager {
         })
 
         ssh.on('error', (err) => {
-          console.debug(`SSH Authentication Error [${clusterId}]:`, err.message)
+          console.error(`SSH Authentication Error [${clusterId}]:`, err.message)
         })
 
         const sshConfig: ConnectConfig = {
@@ -188,7 +171,7 @@ class TunnelManager {
           username: config.sshUser,
           keepaliveInterval: 10000,  // 每10秒发送一次 keepalive
           readyTimeout: 30000,       // 30秒连接超时
-          debug: (msg: string) => console.debug(`SSH Debug [${clusterId}]: ${msg}`),
+          // debug: (msg: string) => console.debug(`SSH Debug [${clusterId}]: ${msg}`),
           algorithms: {
             kex: [
               'ecdh-sha2-nistp256',
@@ -217,18 +200,6 @@ class TunnelManager {
           ssh.connect(sshConfig)
         }
 
-        // 设置活动检查定时器
-        const activityTimer = setInterval(() => {
-          const inactiveTime = Date.now() - lastActivity
-          if (isConnected && inactiveTime > ACTIVITY_TIMEOUT) {
-            console.warn(`SSH connection inactive for ${Math.round(inactiveTime / 1000)}s, reconnecting...`)
-            ssh.end()
-            isConnected = false
-            retryCount = 0
-            setTimeout(attemptConnection, RETRY_DELAY)
-          }
-        }, 10000)  // 每10秒检查一次
-
         ssh.on('ready', () => {
           console.log(`SSH connection ready for cluster ${clusterId}`)
           isConnected = true
@@ -252,39 +223,22 @@ class TunnelManager {
           console.log(`SSH connection closed for cluster ${clusterId}`)
           isConnected = false
           connection.end()
-          clearInterval(activityTimer)  // 清理定时器
         })
 
         ssh.on('end', () => {
           console.log(`SSH connection ended for cluster ${clusterId}`)
           isConnected = false
           connection.end()
-          clearInterval(activityTimer)  // 清理定时器
         })
-
-        // 更新活动时间的调试消息处理
-        const originalDebug = sshConfig.debug
-        sshConfig.debug = (msg: string) => {
-          originalDebug?.(msg)
-          if (msg.includes('Outbound:') || msg.includes('Inbound:')) {
-            lastActivity = Date.now()
-          }
-        }
 
         // 添加密码认证
         if (config.sshPassword) {
           try {
-            // 验证密码格式
-            if (!config.sshPassword.includes(':')) {
-              console.warn(`SSH Warning [${clusterId}]: Password appears to be unencrypted, attempting to use as plain text`)
-              sshConfig.password = config.sshPassword
-            } else {
-              // 解密密码
-              const decryptedPassword = decrypt(config.sshPassword)
-              sshConfig.password = decryptedPassword
-              console.debug(`SSH Debug [${clusterId}]: Password decrypted successfully`)
-            }
-            
+            // 解密密码
+            const decryptedPassword = decrypt(config.sshPassword)
+            sshConfig.password = decryptedPassword
+            console.debug(`SSH Debug [${clusterId}]: Password decrypted successfully`)
+
             // 添加密码认证方法
             sshConfig.authHandler = ['password'] as AuthenticationType[]
           } catch (error) {
@@ -297,7 +251,7 @@ class TunnelManager {
             const fs = require('fs')
             const privateKey = fs.readFileSync(config.sshKeyFile)
             sshConfig.privateKey = privateKey
-            
+
             // 检查密钥格式
             if (!privateKey.toString().includes('PRIVATE KEY')) {
               throw new Error('Invalid SSH private key format')
@@ -339,8 +293,21 @@ class TunnelManager {
 
   public async closeTunnel(clusterId: string): Promise<void> {
     const tunnelInfo = this.tunnels.get(clusterId)
-    if (tunnelInfo) {
-      return new Promise((resolve) => {
+    console.log(`Closing SSH tunnel for cluster ${clusterId}`)
+    
+    if (!tunnelInfo) {
+      console.log(`No tunnel found for cluster ${clusterId}`)
+      return Promise.resolve()
+    }
+
+    return new Promise((resolve) => {
+      const cleanup = () => {
+        this.tunnels.delete(clusterId)
+        console.log(`SSH tunnel closed and removed for cluster ${clusterId}`)
+        resolve()
+      }
+
+      try {
         // 关闭 SSH 客户端
         if (tunnelInfo.sshClient) {
           tunnelInfo.sshClient.end()
@@ -354,18 +321,23 @@ class TunnelManager {
             console.error(`Error closing connection for cluster ${clusterId}:`, e)
           }
         })
-        
+
         // 清空连接集合
         tunnelInfo.connections.clear()
-        
+
         // 关闭服务器
-        tunnelInfo.server.close(() => {
-          this.tunnels.delete(clusterId)
-          console.log(`SSH tunnel closed for cluster ${clusterId}`)
-          resolve()
-        })
-      })
-    }
+        if (tunnelInfo.server.listening) {
+          tunnelInfo.server.close(() => {
+            cleanup()
+          })
+        } else {
+          cleanup()
+        }
+      } catch (error) {
+        console.error(`Error during tunnel cleanup for cluster ${clusterId}:`, error)
+        cleanup()
+      }
+    })
   }
 
   private async cleanupUnusedTunnels() {
@@ -373,7 +345,7 @@ class TunnelManager {
     const IDLE_TIMEOUT = 5 * 60 * 1000  // 5 minutes in milliseconds
 
     console.debug('Running tunnel cleanup check...')
-    
+
     // 使用 Array.from 来避免迭代器问题
     const entries = Array.from(this.tunnels.entries())
     for (const [clusterId, tunnelInfo] of entries) {
@@ -414,7 +386,7 @@ class TunnelManager {
       clearInterval(this.cleanupInterval)
       this.cleanupInterval = null
     }
-    
+
     // 使用 Array.from 来避免迭代器问题
     const clusterIds = Array.from(this.tunnels.keys())
     for (const clusterId of clusterIds) {

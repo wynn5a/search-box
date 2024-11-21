@@ -3,7 +3,7 @@ import { z } from "zod"
 import { validateRequestBody } from "@/lib/utils/api-utils"
 import prisma from "@/lib/prisma"
 import { OpenSearchClient } from "@/lib/opensearch"
-import { encrypt, decrypt } from "@/lib/utils/crypto"
+import { encrypt } from "@/lib/utils/crypto"
 
 // 获取一个随机的可用端口
 function getRandomPort(min: number = 10000, max: number = 65535): number {
@@ -142,6 +142,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    console.log('Getting clusters from database...')
     const clusters = await prisma.cluster.findMany({
       orderBy: {
         createdAt: 'desc'
@@ -156,6 +157,7 @@ export async function GET() {
         sshHost: true,
         sshPort: true,
         sshUser: true,
+        sshKeyFile: true,
         localPort: true,
         remoteHost: true,
         remotePort: true,
@@ -165,29 +167,42 @@ export async function GET() {
       }
     })
 
+    console.log('Found clusters:', clusters.length)
+    
+    if (clusters.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: []
+      })
+    }
+
+    console.log('Getting health for each cluster...')
     const clustersWithHealth = await Promise.all(
       clusters.map(async (cluster) => {
         try {
+          console.log(`Getting health for cluster ${cluster.id}...`)
           // 获取完整的集群信息（包含密码）用于连接测试
           const fullCluster = await prisma.cluster.findUnique({
             where: { id: cluster.id },
           })
           
           if (!fullCluster) {
+            console.log(`Cluster ${cluster.id} not found in database`)
             throw new Error('Cluster not found')
           }
 
+          console.log(`Creating OpenSearch client for cluster ${cluster.id}...`)
           const client = await OpenSearchClient.getInstance({
             id: cluster.id,
             name: cluster.name,
             url: cluster.url,
             username: cluster.username || undefined,
-            password: fullCluster.password ? decrypt(fullCluster.password) : undefined,
+            password: fullCluster.password,
             sshEnabled: cluster.sshEnabled,
             sshHost: cluster.sshHost || undefined,
             sshPort: cluster.sshPort || undefined,
             sshUser: cluster.sshUser || undefined,
-            sshPassword: fullCluster.sshPassword ? decrypt(fullCluster.sshPassword) : undefined,
+            sshPassword: fullCluster.sshPassword,
             sshKeyFile: cluster.sshKeyFile || undefined,
             localPort: cluster.localPort || undefined,
             remoteHost: cluster.remoteHost || undefined,
@@ -196,10 +211,12 @@ export async function GET() {
             updatedAt: cluster.updatedAt,
           })
           const health = await client.getClusterHealth()
+          
           return {
             ...cluster,
             health: {
-              status: health.status
+              status: health.status,
+              error: null
             }
           }
         } catch (error) {
@@ -207,14 +224,19 @@ export async function GET() {
           return {
             ...cluster,
             health: {
-              status: 'unknown'
+              status: 'unknown',
+              error: error instanceof Error ? error.message : '未知错误'
             }
           }
         }
       })
     )
 
-    return NextResponse.json(clustersWithHealth)
+    console.log('Returning clusters with health...')
+    return NextResponse.json({
+      success: true,
+      data: clustersWithHealth
+    })
   } catch (error) {
     console.error("Error getting clusters:", error)
     return NextResponse.json({

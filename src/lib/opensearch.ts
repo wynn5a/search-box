@@ -7,12 +7,10 @@ import { decrypt } from './utils/crypto'
 class OpenSearchClient {
   private static instances: Map<string, OpenSearchClient> = new Map()
   private client: Client
-  private clusterId: string
   private retryCount: number = 2
   private retryDelay: number = 100
 
   private constructor(config: ClusterConfig) {
-    this.clusterId = config.id || ''
     let nodeUrl = config.url
 
     // 如果启用了 SSH 隧道，使用本地转发端口
@@ -107,13 +105,13 @@ class OpenSearchClient {
           await instance.client.cluster.health({})
           OpenSearchClient.instances.set(key, instance)
         } catch (error) {
-          console.error('Failed to connect to OpenSearch:', error)
+          console.error('Failed to connect to OpenSearch: ' + config.name, error)
           // 如果是SSH隧道连接，关闭隧道
           if (config.sshEnabled && config.id) {
             await tunnelManager.closeTunnel(config.id)
           }
           throw new ApiError(
-            'Failed to connect to OpenSearch cluster',
+            'Failed to connect to OpenSearch cluster: ' + config.name,
             500,
             error
           )
@@ -179,8 +177,6 @@ class OpenSearchClient {
           path: `/${cleanPath}`,
           body,
         })
-
-        console.log('Query response:', response)
         return response.body
       } catch (error) {
         console.error('Query error:', error)

@@ -51,10 +51,14 @@ export async function GET(
             return NextResponse.json({ error: "Invalid cluster ID" }, { status: 400 });
         }
 
-        const cluster = await prisma.cluster.findUnique({
+        // 更新集群的最后连接时间并获取集群信息
+        const cluster = await prisma.cluster.update({
             where: {
                 id: String(clusterId),
             },
+            data: {
+                lastConnected: new Date()
+            }
         })
 
         if (!cluster) {

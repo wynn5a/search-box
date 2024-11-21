@@ -61,7 +61,6 @@ export function ClustersList() {
       const response = await fetch("/api/clusters")
       if (!response.ok) throw new Error("Failed to fetch clusters")
       const data = await response.json()
-      console.log(data)
       const clustersData = data.success ? data.data : []
       
       setClusters(clustersData.map((cluster: ClusterConfig) => ({

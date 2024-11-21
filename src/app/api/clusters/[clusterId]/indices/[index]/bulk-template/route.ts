@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { OpenSearchClient } from "@/lib/opensearch"
 import prisma from "@/lib/prisma"
-import { generateDocumentTemplate } from "@/lib/template-generator"
+import { generateBulkTemplate } from "@/lib/template-generator"
 
 export async function GET(
   request: Request,
@@ -22,18 +22,18 @@ export async function GET(
     }
 
     const client = await OpenSearchClient.getInstance(cluster)
-    const template = await generateDocumentTemplate(client, index)
+    const template = await generateBulkTemplate(client, index)
 
     return NextResponse.json({
       success: true,
       data: template
     })
   } catch (error) {
-    console.error('Template generation error:', error)
+    console.error('Bulk template generation error:', error)
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to generate template' 
+        error: error instanceof Error ? error.message : 'Failed to generate bulk template' 
       },
       { status: 500 }
     )

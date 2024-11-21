@@ -16,7 +16,7 @@ export function JsonView({ value }: JsonViewProps) {
         value={value}
         theme={theme === 'dark' ? 'vs-dark' : 'light'}
         options={{
-          minimap: { enabled: false },
+          minimap: { enabled: true },
           folding: true,
           foldingHighlight: true,
           lineNumbers: 'on',
@@ -36,7 +36,25 @@ export function JsonView({ value }: JsonViewProps) {
           },
           bracketPairColorization: {
             enabled: true
-          }
+          },
+          // 禁用所有编辑相关的功能
+          contextmenu: false,
+          quickSuggestions: false,
+          suggestOnTriggerCharacters: false,
+          acceptSuggestionOnEnter: 'off',
+          tabCompletion: 'off',
+          parameterHints: {
+            enabled: false
+          },
+          cursorStyle: 'line-thin',
+          cursorBlinking: 'solid',
+          // 禁用拖放
+          dragAndDrop: false,
+          // 禁用所有编辑器操作
+          matchBrackets: 'never',
+          selectionHighlight: false,
+          // 禁用右键菜单
+          mouseWheelZoom: false
         }}
         className="[&_.monaco-editor]:!bg-transparent"
       />
