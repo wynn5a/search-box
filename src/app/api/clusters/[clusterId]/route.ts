@@ -6,31 +6,43 @@ export async function DELETE(
     request: Request,
     context: { params: Promise<{ clusterId: string }> }
 ) {
+    const { clusterId } = await context.params
     try {
-        const cluster = await prisma.cluster.findUnique({
-            where: {
-                id: (await context.params).clusterId,
-            },
+        // Use transaction to ensure atomicity
+        return await prisma.$transaction(async (tx) => {
+            const cluster = await tx.cluster.findUnique({
+                where: {
+                    id: clusterId,
+                },
+            })
+
+            if (!cluster) {
+                return NextResponse.json(
+                    { error: "Cluster not found" },
+                    { status: 404 }
+                )
+            }
+
+            if (cluster.sshEnabled) {
+                await tunnelManager.closeTunnel(cluster.id)
+            }
+
+            // First delete all associated query templates
+            await tx.queryTemplate.deleteMany({
+                where: {
+                    clusterId: clusterId,
+                },
+            })
+
+            // Then delete the cluster
+            await tx.cluster.delete({
+                where: {
+                    id: clusterId,
+                },
+            })
+
+            return NextResponse.json({ success: true })
         })
-
-        if (!cluster) {
-            return NextResponse.json(
-                { error: "Cluster not found" },
-                { status: 404 }
-            )
-        }
-
-        if (cluster.sshEnabled) {
-            await tunnelManager.closeTunnel(cluster.id)
-        }
-
-        await prisma.cluster.delete({
-            where: {
-                id: (await context.params).clusterId,
-            },
-        })
-
-        return NextResponse.json({ success: true })
     } catch (error) {
         console.error("Error deleting cluster:", error)
         return NextResponse.json(
@@ -46,7 +58,7 @@ export async function GET(
 ) {
     try {
         const clusterId = (await context.params).clusterId;
-        
+
         if (!clusterId) {
             return NextResponse.json({ error: "Invalid cluster ID" }, { status: 400 });
         }
