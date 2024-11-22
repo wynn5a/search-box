@@ -4,7 +4,6 @@ import {
   ClusterSettings,
   ClusterIndices 
 } from "@/components/cluster"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
@@ -17,7 +16,7 @@ export default async function ClusterPage(props: { params: Promise<{ clusterId: 
   const params = await props.params;
   return (
     <div className="flex flex-col space-y-6">
-      <div className="px-6 py-3">
+      <div className="px-6 py-3 border-b">
         <div className="flex items-center justify-between">
           <ClusterBreadcrumb clusterId={params.clusterId} currentPage="概览" />
           <Link href={`/clusters/${params.clusterId}/query`}>
@@ -28,12 +27,11 @@ export default async function ClusterPage(props: { params: Promise<{ clusterId: 
           </Link>
         </div>
       </div>
-      <Separator />
       <div className="p-6 space-y-6">
         <ClusterOverview clusterId={params.clusterId} />
         <Tabs defaultValue="indices" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="indices">索引管理</TabsTrigger>
+            <TabsTrigger value="indices">索引列表</TabsTrigger>
             <TabsTrigger value="settings">集群设置</TabsTrigger>
           </TabsList>
           <TabsContent value="indices" className="space-y-4">

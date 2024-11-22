@@ -39,11 +39,12 @@ type IndexFormValues = z.infer<typeof indexFormSchema>
 
 interface CreateIndexDialogProps {
   clusterId: string
-  onSuccess?: () => void
+  onCreated?: () => Promise<void>
 }
 
-export function CreateIndexDialog({ clusterId, onSuccess }: CreateIndexDialogProps) {
+export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogProps) {
   const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   
   const form = useForm<IndexFormValues>({
@@ -55,8 +56,11 @@ export function CreateIndexDialog({ clusterId, onSuccess }: CreateIndexDialogPro
     },
   })
 
-  async function onSubmit(data: IndexFormValues) {
+  const onSubmit = async (data: IndexFormValues) => {
+    if (loading) return
+
     try {
+      setLoading(true)
       const response = await fetch(`/api/clusters/${clusterId}/indices`, {
         method: "POST",
         headers: {
@@ -73,8 +77,10 @@ export function CreateIndexDialog({ clusterId, onSuccess }: CreateIndexDialogPro
         }),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        throw new Error("Failed to create index")
+        throw new Error(result.message || "创建索引失败")
       }
 
       toast({
@@ -84,21 +90,32 @@ export function CreateIndexDialog({ clusterId, onSuccess }: CreateIndexDialogPro
 
       setOpen(false)
       form.reset()
-      onSuccess?.()
+      if (onCreated) {
+        await onCreated()
+      }
     } catch (error) {
       console.error("Error creating index:", error)
       toast({
         title: "创建索引失败",
-        description: "请稍后重试",
+        description: error instanceof Error ? error.message : "请稍后重试",
         variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(open) => {
+      if (!loading) {
+        setOpen(open)
+        if (!open) {
+          form.reset()
+        }
+      }
+    }}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2" variant={"outline"}>
           <PlusCircle className="h-4 w-4" />
           创建索引
         </Button>
@@ -161,7 +178,9 @@ export function CreateIndexDialog({ clusterId, onSuccess }: CreateIndexDialogPro
               )}
             />
             <DialogFooter>
-              <Button type="submit">创建索引</Button>
+              <Button type="submit" disabled={loading} loading={loading}>
+                {loading ? "创建中..." : "创建索引"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Tooltip,
   TooltipContent,
@@ -20,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { Trash2, Play, Pause, Lock } from "lucide-react"
+import { Trash2, Play, Pause, Lock, RefreshCw } from "lucide-react"
 import { CreateIndexDialog } from "./create-index-dialog"
 import { cn } from "@/lib/utils"
 import {
@@ -35,7 +36,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Loader2 } from "lucide-react"
-import { IndexSettingsDialog } from "./index-settings-dialog"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
 
 interface IndexStats {
   health: string
@@ -50,12 +52,12 @@ interface IndexStats {
   "pri.store.size": string
 }
 
-const DeleteButton = ({ 
-  index, 
-  onDelete 
-}: { 
-  index: string, 
-  onDelete: () => Promise<void> 
+const DeleteButton = ({
+  index,
+  onDelete
+}: {
+  index: string,
+  onDelete: () => Promise<void>
 }) => {
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -71,6 +73,7 @@ const DeleteButton = ({
         <Button
           variant="ghost"
           size="icon"
+          className="text-destructive"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -107,13 +110,16 @@ const DeleteButton = ({
 }
 
 export function IndicesList({ clusterId }: { clusterId: string }) {
+  const router = useRouter()
   const [indices, setIndices] = useState<IndexStats[]>([])
   const [loading, setLoading] = useState(true)
   const [showHiddenIndices, setShowHiddenIndices] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const { toast } = useToast()
 
   const fetchIndices = async () => {
     try {
+      setRefreshing(true)
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
       if (!response.ok) throw new Error("Failed to fetch indices")
       const data = await response.json()
@@ -131,13 +137,12 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
       setIndices([])
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
   useEffect(() => {
     fetchIndices()
-    const interval = setInterval(fetchIndices, 30000)
-    return () => clearInterval(interval)
   }, [clusterId])
 
   const getHealthColor = (health: string) => {
@@ -159,7 +164,7 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
         method: "DELETE",
       })
       if (!response.ok) throw new Error("Failed to delete index")
-      
+
       toast({
         title: "索引已删除",
         description: `索引 "${indexName}" 已成功删除`,
@@ -181,7 +186,7 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
         { method: "POST" }
       )
       if (!response.ok) throw new Error(`Failed to ${isOpen ? "close" : "open"} index`)
-      
+
       toast({
         title: `索引已${isOpen ? "关闭" : "打开"}`,
         description: `索引 "${indexName}" 已${isOpen ? "关闭" : "打开"}`,
@@ -202,139 +207,186 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
   })
 
   if (loading) {
-    return <div>加载索引列表中...</div>
-  }
-
-  const formatNumber = (value: number | null | undefined) => {
-    if (value === null || value === undefined) return "0"
-    return value.toLocaleString()
-  }
-
-  const formatSize = (size: string | null | undefined) => {
-    if (size === null || size === undefined) return "0b"
-    return size
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">索引列表</h2>
+          <Button variant="outline" size="sm" disabled>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            刷新
+          </Button>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>状态</TableHead>
+                <TableHead>索引名称</TableHead>
+                <TableHead className="text-center">主分片</TableHead>
+                <TableHead className="text-center">副本分片</TableHead>
+                <TableHead className="text-center">文档数</TableHead>
+                <TableHead className="text-center">已删除</TableHead>
+                <TableHead className="text-center">存储大小</TableHead>
+                <TableHead className="text-center">主分片大小</TableHead>
+                <TableHead>操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <Switch
             id="show-hidden"
             checked={showHiddenIndices}
             onCheckedChange={setShowHiddenIndices}
           />
           <Label htmlFor="show-hidden">显示系统索引</Label>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Lock className="h-3 w-3" />
-            <span>系统索引</span>
-          </div>
         </div>
-        <CreateIndexDialog clusterId={clusterId} onSuccess={fetchIndices} />
+        <div className="flex space-x-2">
+          <CreateIndexDialog clusterId={clusterId} onCreated={fetchIndices} />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={fetchIndices}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn(
+              "h-4 w-4",
+              refreshing && "animate-spin"
+            )} />
+          </Button>
+        </div>
+
       </div>
-      <div className="rounded-md border">
-        <Table>
+
+      <ScrollArea className="h-[500px] rounded-md border">
+        <Table className="text-center">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">状态</TableHead>
+              <TableHead className="text-center">状态</TableHead>
               <TableHead>索引名称</TableHead>
-              <TableHead>文档数</TableHead>
-              <TableHead>主分片</TableHead>
-              <TableHead>副本分片</TableHead>
-              <TableHead>存储大小</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+              <TableHead className="text-center">主分片</TableHead>
+              <TableHead className="text-center">副本分片</TableHead>
+              <TableHead className="text-center">文档数</TableHead>
+              <TableHead className="text-center">已删除</TableHead>
+              <TableHead className="text-center">存储大小</TableHead>
+              <TableHead className="text-center">主分片大小</TableHead>
+              <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredIndices.map((index) => (
-              <TableRow 
-                key={index.index}
-                className={cn(
-                  index.index.startsWith('.') && "bg-muted/50"
-                )}
-              >
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`h-2 w-2 rounded-full ${getHealthColor(index.health)}`}
-                    />
-                    <Badge
-                      variant={index.status === "open" ? "default" : "secondary"}
-                    >
-                      {index.status}
-                    </Badge>
-                    {index.index.startsWith('.') && (
-                      <Lock className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    <span>{index.index}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{formatNumber(index["docs.count"])}</TableCell>
-                <TableCell>{formatNumber(index.pri)}</TableCell>
-                <TableCell>{formatNumber(index.rep)}</TableCell>
-                <TableCell>{formatSize(index["store.size"])}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleIndex(index.index, index.status === "open")}
-                          >
-                            {index.status === "open" ? (
-                              <Pause className="h-4 w-4" />
-                            ) : (
-                              <Play className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{index.status === "open" ? "关闭索引" : "打开索引"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <IndexSettingsDialog
-                            clusterId={clusterId}
-                            indexName={index.index}
-                            onSuccess={fetchIndices}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>索引设置</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DeleteButton 
-                            index={index.index} 
-                            onDelete={() => deleteIndex(index.index)} 
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>删除索引</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
+            {filteredIndices.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-24 text-center">
+                  没有找到索引
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredIndices.map((index) => (
+                <TableRow
+                  key={index.index}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={(e) => {
+                    // 如果点击的是按钮区域，不进行导航
+                    if ((e.target as HTMLElement).closest('button, [role="button"]')) {
+                      return
+                    }
+                    router.push(`/clusters/${clusterId}/indices/${index.index}`)
+                  }}
+                >
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div
+                            className={cn(
+                              "h-3 w-3 rounded-full",
+                              getHealthColor(index.health)
+                            )}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{index.health}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center space-x-2">
+                      {index.index.startsWith('.') && (
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      )}
+                      <span>{index.index}</span>
+                      {index.status === 'close' && (
+                        <Badge variant="secondary">已关闭</Badge>
+                      )}
+                      {index.status === 'open' && (
+                        <Badge variant="secondary">已开启</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{index.pri}</TableCell>
+                  <TableCell>{index.rep}</TableCell>
+                  <TableCell>
+                    {typeof index["docs.count"] === "number"
+                      ? index["docs.count"].toLocaleString()
+                      : "0"
+                    }
+                  </TableCell>
+                  <TableCell>
+                    {typeof index["docs.deleted"] === "number"
+                      ? index["docs.deleted"].toLocaleString()
+                      : "0"
+                    }
+                  </TableCell>
+                  <TableCell>{index["store.size"] || "0b"}</TableCell>
+                  <TableCell>{index["pri.store.size"] || "0b"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleIndex(index.index, index.status === 'open')}
+                      >
+                        {index.status === 'open' ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <DeleteButton
+                        index={index.index}
+                        onDelete={() => deleteIndex(index.index)}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
-      </div>
+      </ScrollArea>
     </div>
   )
-} 
+}

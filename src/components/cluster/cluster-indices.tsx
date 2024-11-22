@@ -18,6 +18,13 @@ import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { ScrollArea } from "../ui/scroll-area"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Badge } from "../ui/badge"
 
 interface IndexInfo {
   health: string
@@ -134,18 +141,39 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchIndices}
-            disabled={refreshing}
-          >
-            <RefreshCw className={cn(
-              "h-4 w-4 mr-2",
-              refreshing && "animate-spin"
-            )} />
-            刷新
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={fetchIndices}
+                  disabled={refreshing}
+                >
+                  <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>刷新索引列表</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => router.push(`/clusters/${clusterId}/indices`)}
+                >
+                  <Cog className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>索引管理</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -154,8 +182,8 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>状态</TableHead>
-              <TableHead>索引名称</TableHead>
+              <TableHead className="text-center">状态</TableHead>
+              <TableHead className="text-left">索引名称</TableHead>
               <TableHead className="text-right">主分片</TableHead>
               <TableHead className="text-right">副本分片</TableHead>
               <TableHead className="text-right">文档数</TableHead>
@@ -175,16 +203,15 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
               filteredIndices.map((index) => (
                 <TableRow 
                   key={index.index}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`/clusters/${clusterId}/indices/${index.index}`)}
+                  className="hover:bg-muted/50"
                 >
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+                  <TableCell className="text-center items-center">
+                    <div className="flex items-center gap-2 justify-center">
                       <div className={cn(
                         "h-2 w-2 rounded-full",
                         getHealthColor(index.health)
                       )} />
-                      <span className="capitalize">{index.status.toLowerCase()}</span>
+                      <Badge variant="secondary" className="capitalize">{index.status.toLowerCase()}</Badge>
                     </div>
                   </TableCell>
                   <TableCell>

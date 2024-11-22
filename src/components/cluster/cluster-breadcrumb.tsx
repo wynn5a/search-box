@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast"
 interface ClusterBreadcrumbProps {
   clusterId: string
   currentPage: string
+  indexName?: string
 }
 
-export function ClusterBreadcrumb({ clusterId, currentPage }: ClusterBreadcrumbProps) {
+export function ClusterBreadcrumb({ clusterId, currentPage, indexName }: ClusterBreadcrumbProps) {
   const [cluster, setCluster] = useState<ClusterConfig | null>(null)
   const { toast } = useToast()
 
@@ -61,7 +62,7 @@ export function ClusterBreadcrumb({ clusterId, currentPage }: ClusterBreadcrumbP
       </Link>
       <ChevronRight className="h-4 w-4" />
       <Link 
-        href={`/clusters/${clusterId}`}
+        href={indexName?`/clusters/${clusterId}/indices`:`/clusters/${clusterId}`}
         className="hover:text-foreground transition-colors"
       >
         {cluster.name}

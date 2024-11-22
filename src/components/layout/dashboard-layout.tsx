@@ -30,7 +30,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="flex-1 min-h-0 container">
+      <main className="flex-1 container overflow-hidden">
         {children}
       </main>
     </div>

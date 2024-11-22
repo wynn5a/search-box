@@ -188,13 +188,7 @@ export function ClusterSettings({ clusterId }: Props) {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">集群设置</h1>
-        <p className="text-muted-foreground">
-          管理和查看 OpenSearch 集群的所有设置。这些设置决定了集群的行为和性能特征。
-        </p>
-      </div>
-
+      
       <div className="mb-6 flex items-center gap-4 justify-between">
         <Input
           placeholder="搜索设置..."
@@ -219,7 +213,7 @@ export function ClusterSettings({ clusterId }: Props) {
         </TabsList>
 
         <TabsContent value="persistent">
-          <ScrollArea className="h-[600px]">
+          <ScrollArea className="h-[calc(100vh-100px)]">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>

@@ -331,7 +331,6 @@ class OpenSearchClient {
         index: name,
         include_defaults: true,
       })
-      console.log(response)
       return response.body
     }, 'Failed to get index settings')
   }
