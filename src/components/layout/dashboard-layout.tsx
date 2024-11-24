@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { Moon, Sun } from "lucide-react"
 import Link from "next/link"
+import { LanguageToggle } from "@/components/language-toggle"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { setTheme, theme } = useTheme()
@@ -18,6 +19,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+            <LanguageToggle />
             <Button
               variant="ghost"
               size="icon"
@@ -35,4 +37,4 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </main>
     </div>
   )
-} 
+}

@@ -1,23 +1,3 @@
-export interface ClusterConfig {
-  id: string
-  name: string
-  url: string
-  username?: string | null
-  password?: string | null
-  sshEnabled: boolean
-  sshHost?: string | null
-  sshPort?: number | null
-  sshUser?: string | null
-  sshPassword?: string | null
-  sshKeyFile?: string | null
-  localPort?: number | null
-  remoteHost?: string | null
-  remotePort?: number | null
-  createdAt: Date
-  updatedAt: Date
-}
-
-
 export interface ClusterHealth {
   status: string
   number_of_nodes: number
@@ -38,6 +18,27 @@ export interface ClusterStats {
       total_data_set_size_in_bytes: number
     }
   }
+}
+
+export interface ClusterConfig {
+  id: string
+  name: string
+  url: string
+  username: string | null
+  password: string | null
+  isDefault: boolean
+  sshEnabled: boolean
+  sshHost: string | null
+  sshPort: number | null
+  sshUser: string | null
+  sshPassword: string | null
+  sshKeyFile: string | null
+  localPort: number | null
+  remoteHost: string | null
+  remotePort: number | null
+  createdAt: Date
+  updatedAt: Date
+  lastConnected: Date | null
 }
 
 export interface ClusterOverview extends ClusterConfig {

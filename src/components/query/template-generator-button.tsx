@@ -38,13 +38,15 @@ export function TemplateGeneratorButton({
         variant: "default",
       })
     } catch (error) {
-      console.error("Error generating template:", error)
+      // console.error("Error generating template:", error)
       toast({
         title: "Error",
-        description: `Failed to generate ${isBulk ? "bulk" : "document"} template`,
+        description: error instanceof Error 
+          ? error.message 
+          : `Failed to generate ${isBulk ? "bulk" : "document"} template. Please make sure the index exists and has mappings.`,
         variant: "destructive",
       })
-    }finally {
+    } finally {
       setLoading(false)
     }
   }, [client, index, isBulk, onGenerated, toast])

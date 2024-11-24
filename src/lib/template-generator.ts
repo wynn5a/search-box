@@ -145,9 +145,19 @@ export async function generateDocumentTemplate(client: OpenSearchClient, index: 
       path: `/${index}/_mapping`
     });
 
-    const mapping = response.data && response.data[index] as IndexMapping;
+    if (!response || !response.success) {
+      throw new Error(`No response received for index ${index}`);
+    }
+
+    console.log('Mapping response:', response)
+
+    if (!response.data || !response.data[index]) {
+      throw new Error(`Index ${index} not found`);
+    }
+
+    const mapping = response.data[index] as IndexMapping;
     if (!mapping?.mappings?.properties) {
-      throw new Error('No mapping found for index');
+      throw new Error(`No mapping properties found for index ${index}`);
     }
 
     const template = generateTemplateFromMapping({ 
@@ -157,7 +167,9 @@ export async function generateDocumentTemplate(client: OpenSearchClient, index: 
 
     return JSON.stringify(template, null, 2);
   } catch (error) {
-    console.error('Error generating document template:', error);
+    if (error instanceof Error) {
+      throw new Error(`Failed to generate template: ${error.message}`);
+    }
     throw error;
   }
 }
