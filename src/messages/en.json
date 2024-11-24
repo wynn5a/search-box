@@ -1,0 +1,175 @@
+{
+  "common": {
+    "language": "Language",
+    "theme": "Theme",
+    "button": {
+      "add": "Add",
+      "refresh": "Refresh",
+      "save": "Save",
+      "cancel": "Cancel",
+      "test": "Test Connection",
+      "close": "Close"
+    }
+  },
+  "home": {
+    "title": "Dashboard",
+    "description": "Manage your OpenSearch clusters",
+    "overview": {
+      "title": "Dashboard",
+      "description": "Monitor and manage your OpenSearch clusters",
+      "manage": "Manage Clusters",
+      "total_clusters": "Total Clusters",
+      "total_indices": "Total Indices",
+      "total_storage": "Total Storage",
+      "clusters_stats": "{healthy} healthy, {unhealthy} unhealthy",
+      "indices_stats": "Total indices across all clusters",
+      "storage_stats": "Total storage across all clusters",
+      "shards_status": "Shards Status",
+      "active_shards": "Active Shards",
+      "clusters": "Clusters",
+      "no_clusters": "No Clusters Found",
+      "try_different_filter": "Try a different search term or filter",
+      "search": {
+        "placeholder": "Search clusters..."
+      },
+      "filter": {
+        "health": {
+          "placeholder": "Filter by health",
+          "all": "All clusters",
+          "healthy": "Healthy",
+          "unhealthy": "Unhealthy"
+        }
+      },
+      "button": {
+        "refresh": "Refresh"
+      },
+      "error": {
+        "get_clusters": {
+          "title": "Error",
+          "description": "Failed to fetch clusters"
+        },
+        "refresh": {
+          "title": "Error",
+          "description": "Failed to refresh data"
+        }
+      },
+      "shards": {
+        "title": "Shards Status",
+        "total": "Total Shards",
+        "active": "Active",
+        "relocating": "Relocating",
+        "initializing": "Initializing",
+        "unassigned": "Unassigned"
+      }
+    },
+    "button": {
+      "refresh": "Refresh"
+    }
+  },
+  "cluster": {
+    "add": {
+      "title": "Add Cluster",
+      "description": "Add a new OpenSearch cluster",
+      "button": "Add Cluster",
+      "form": {
+        "name": {
+          "label": "Cluster Name",
+          "description": "A friendly name for this cluster",
+          "placeholder": "My Cluster"
+        },
+        "url": {
+          "label": "URL",
+          "description": "The URL of your OpenSearch cluster",
+          "placeholder": "https://localhost:9200"
+        },
+        "auth": {
+          "title": "Authentication",
+          "username": {
+            "label": "Username",
+            "placeholder": "admin"
+          },
+          "password": {
+            "label": "Password",
+            "placeholder": "••••••••"
+          }
+        },
+        "ssh": {
+          "title": "SSH Tunnel",
+          "enabled": "Enable SSH Tunnel",
+          "host": {
+            "label": "SSH Host",
+            "placeholder": "example.com"
+          },
+          "port": {
+            "label": "SSH Port",
+            "placeholder": "22"
+          },
+          "user": {
+            "label": "SSH User",
+            "placeholder": "username"
+          },
+          "password": {
+            "label": "SSH Password",
+            "placeholder": "••••••••"
+          },
+          "keyFile": {
+            "label": "SSH Key File",
+            "description": "Path to private key file",
+            "placeholder": "~/.ssh/id_rsa"
+          }
+        },
+        "advanced": {
+          "title": "Advanced Settings",
+          "localPort": {
+            "label": "Local Port",
+            "description": "Local port for SSH tunnel",
+            "placeholder": "9200"
+          },
+          "remoteHost": {
+            "label": "Remote Host",
+            "description": "Remote host for SSH tunnel",
+            "placeholder": "localhost"
+          },
+          "remotePort": {
+            "label": "Remote Port",
+            "description": "Remote port for SSH tunnel",
+            "placeholder": "9200"
+          }
+        }
+      },
+      "validation": {
+        "name": "Name must be at least 2 characters",
+        "url": "Please enter a valid URL",
+        "ssh": "SSH host, user, and either password or key file are required"
+      },
+      "error": {
+        "title": "Failed to add cluster",
+        "description": "Please check your input and try again"
+      },
+      "success": {
+        "title": "Cluster added",
+        "description": "The cluster has been added successfully"
+      }
+    },
+    "card": {
+      "nodes": "{count} nodes",
+      "indices": "{count} indices",
+      "documents": "{count} documents"
+    }
+  },
+  "clusters": {
+    "title": "Clusters",
+    "description": "Manage your OpenSearch clusters",
+    "indices": "Indices",
+    "storage": "Storage",
+    "version": "Version",
+    "nodes": "Nodes",
+    "url": "URL",
+    "unknown": "Unknown",
+    "button": {
+      "details": "Details",
+      "indices": "Indices",
+      "search": "Search"
+    }
+  }
+}

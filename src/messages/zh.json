@@ -1,0 +1,176 @@
+{
+  "common": {
+    "language": "语言",
+    "theme": "主题",
+    "button": {
+      "add": "添加",
+      "refresh": "刷新",
+      "save": "保存",
+      "cancel": "取消",
+      "test": "测试连接",
+      "close": "关闭"
+    }
+  },
+  "home": {
+    "title": "仪表盘",
+    "description": "管理您的 OpenSearch 集群",
+    "overview": {
+      "title": "仪表盘",
+      "description": "监控和管理您的 OpenSearch 集群",
+      "manage": "管理集群",
+      "total_clusters": "集群总数",
+      "clusters_stats": "{healthy} 个健康，{unhealthy} 个不健康",
+      "total_indices": "索引总数",
+      "indices_stats": "所有集群的索引总数",
+      "total_storage": "存储总量",
+      "storage_stats": "所有集群的存储总量",
+      "shards_status": "分片状态",
+      "active_shards": "活跃分片",
+      "clusters": "集群列表",
+      "no_clusters": "未找到集群",
+      "try_different_filter": "尝试使用不同的搜索条件或筛选条件",
+      "search": {
+        "placeholder": "搜索集群..."
+      },
+      "filter": {
+        "health": {
+          "placeholder": "按健康状态筛选",
+          "all": "所有集群",
+          "healthy": "健康",
+          "unhealthy": "异常"
+        }
+      },
+      "button": {
+        "refresh": "刷新"
+      },
+      "error": {
+        "get_clusters": {
+          "title": "错误",
+          "description": "获取集群列表失败"
+        },
+        "refresh": {
+          "title": "错误",
+          "description": "刷新数据失败"
+        }
+      },
+      "shards": {
+        "title": "分片状态",
+        "total": "总分片数",
+        "active": "活跃",
+        "relocating": "迁移中",
+        "initializing": "初始化中",
+        "unassigned": "未分配"
+      }
+    },
+    "button": {
+      "refresh": "刷新"
+    }
+  },
+  "cluster": {
+    "add": {
+      "title": "添加集群",
+      "description": "添加新的 OpenSearch 集群",
+      "button": "添加集群",
+      "form": {
+        "name": {
+          "label": "集群名称",
+          "description": "为集群设置一个友好的名称",
+          "placeholder": "我的集群"
+        },
+        "url": {
+          "label": "URL",
+          "description": "OpenSearch 集群的 URL",
+          "placeholder": "https://localhost:9200"
+        },
+        "auth": {
+          "title": "认证",
+          "username": {
+            "label": "用户名",
+            "placeholder": "admin"
+          },
+          "password": {
+            "label": "密码",
+            "placeholder": "••••••••"
+          }
+        },
+        "ssh": {
+          "title": "SSH 隧道",
+          "enabled": "启用 SSH 隧道",
+          "host": {
+            "label": "SSH 主机",
+            "placeholder": "example.com"
+          },
+          "port": {
+            "label": "SSH 端口",
+            "placeholder": "22"
+          },
+          "user": {
+            "label": "SSH 用户",
+            "placeholder": "username"
+          },
+          "password": {
+            "label": "SSH 密码",
+            "placeholder": "••••••••"
+          },
+          "keyFile": {
+            "label": "SSH 密钥文件",
+            "description": "私钥文件路径",
+            "placeholder": "~/.ssh/id_rsa"
+          }
+        },
+        "advanced": {
+          "title": "高级设置",
+          "localPort": {
+            "label": "本地端口",
+            "description": "SSH 隧道本地端口",
+            "placeholder": "9200"
+          },
+          "remoteHost": {
+            "label": "远程主机",
+            "description": "SSH 隧道远程主机",
+            "placeholder": "localhost"
+          },
+          "remotePort": {
+            "label": "远程端口",
+            "description": "SSH 隧道远程端口",
+            "placeholder": "9200"
+          }
+        }
+      },
+      "validation": {
+        "name": "集群名称至少需要2个字符",
+        "url": "请输入有效的URL地址",
+        "ssh": "SSH主机、用户和密码或密钥文件为必填项"
+      },
+      "error": {
+        "title": "添加集群失败",
+        "description": "请检查输入并重试"
+      },
+      "success": {
+        "title": "集群添加成功",
+        "description": "集群已成功添加"
+      }
+    },
+    "card": {
+      "nodes": "{count} 个节点",
+      "indices": "{count} 个索引",
+      "documents": "{count} 个文档"
+    }
+  },
+  "clusters": {
+    "status": {
+      "unknown": "未知"
+    },
+    "indices": "索引",
+    "storage": "存储",
+    "version": "版本",
+    "nodes": "节点",
+    "unknown": "未知",
+    "button": {
+      "details": "详情",
+      "indices": "索引",
+      "search": "查询",
+      "refresh": "刷新"
+    }
+  }
+}

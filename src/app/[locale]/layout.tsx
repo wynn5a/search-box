@@ -1,36 +1,37 @@
-import { use } from "react";
-import { NextIntlClientProvider, useMessages } from 'next-intl';
+import { NextIntlClientProvider } from 'next-intl';
+import { notFound } from 'next/navigation';
+import { locales } from '@/config';
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import "@/app/globals.css"
 
 export function generateStaticParams() {
-  return [{ locale: 'en' }, { locale: 'zh' }];
+  return locales.map((locale) => ({ locale }));
 }
 
-export default function LocaleLayout(
-  props: {
-    children: React.ReactNode;
-    params: Promise<{ locale: string }>;
+async function getMessages(locale: string) {
+  try {
+    return (await import(`@/messages/${locale}.json`)).default;
+  } catch (error) {
+    notFound();
   }
-) {
-  const params = use(props.params);
+}
 
-  const {
-    locale
-  } = params;
-
-  const {
-    children
-  } = props;
-
-  const messages = useMessages();
+export default async function LocaleLayout({
+  children,
+  params
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = (await params).locale;
+  const messages = await getMessages(locale);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning className="h-full">
       <head />
-      <body className="h-screen">
+      <body className="h-full bg-background font-sans antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider
             attribute="class"
@@ -38,7 +39,9 @@ export default function LocaleLayout(
             enableSystem
             disableTransitionOnChange
           >
-            <DashboardLayout>{children}</DashboardLayout>
+            <DashboardLayout>
+              {children}
+            </DashboardLayout>
             <Toaster />
           </ThemeProvider>
         </NextIntlClientProvider>

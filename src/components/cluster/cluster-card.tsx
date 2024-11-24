@@ -1,112 +1,130 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import { ClusterConfig } from "@/types/cluster"
-import { Database, Settings, Search } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { formatBytes } from "@/lib/utils"
+import { ClusterOverview } from "@/types/cluster"
+import { useTranslations } from "next-intl"
+import { Database, HardDrive, Search, Settings2, List } from "lucide-react"
+import Link from "next/link"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface ClusterCardProps {
-  cluster: ClusterConfig & {
-    health?: {
-      status: string
-      number_of_nodes: number
-    }
-    stats?: {
-      indices: {
-        count: number
-        docs: {
-          count: number
-        }
-      }
-    }
-  }
+  cluster: ClusterOverview
 }
 
 export function ClusterCard({ cluster }: ClusterCardProps) {
-  const router = useRouter()
+  const t = useTranslations('clusters')
+  const healthColor = {
+    green: "bg-green-500",
+    yellow: "bg-yellow-500",
+    red: "bg-red-500",
+  } as const
 
-  const getStatusDotColor = (status?: string) => {
-    switch (status?.toLowerCase()) {
-      case "green":
-        return "bg-green-500"
-      case "yellow":
-        return "bg-yellow-500"
-      case "red":
-        return "bg-red-500"
-      default:
-        return "bg-gray-500"
-    }
+  type HealthStatus = keyof typeof healthColor
+
+  const getHealthColor = (status: string | undefined) => {
+    if (!status || !(status in healthColor)) return "bg-gray-300"
+    return healthColor[status as HealthStatus]
   }
 
+  const quickActions = [
+    {
+      label: t('button.details'),
+      icon: List,
+      href: `/clusters/${cluster.id}`
+    },
+    {
+      label: t('button.indices'),
+      icon: Database,
+      href: `/clusters/${cluster.id}/indices`
+    },
+    {
+      label: t('button.search'),
+      icon: Search,
+      href: `/clusters/${cluster.id}/query`
+    }
+  ]
+
   return (
-    <Card 
-      className="hover:bg-muted/50 transition-colors cursor-pointer"
-      onClick={() => router.push(`/clusters/${cluster.id}`)}
-    >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${getStatusDotColor(cluster.health?.status)}`} />
-            <CardTitle className="text-lg font-medium">
-              {cluster.name}
-            </CardTitle>
+    <Card className="group relative overflow-hidden transition-all hover:shadow-md">
+      <CardHeader className="border-b p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-2.5 h-2.5 rounded-full ${getHealthColor(cluster.health?.status)}`} />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="font-semibold tracking-tight">
+                    {cluster.name}
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent
+                  className="bg-background border"
+                >
+                  <p className="text-xs text-foreground">
+                    {cluster.url}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-          <CardDescription>{cluster.url}</CardDescription>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">节点数</p>
-              <p className="text-lg font-bold">{cluster.health?.number_of_nodes || 0}</p>
+      <CardContent className="p-4">
+        <div className="grid grid-cols-3 gap-4 items-center justify-between">
+          <div className="space-y-1 border-l pl-4">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">
+                {cluster.stats?.indices?.count || '0'}
+              </span>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">索引数</p>
-              <p className="text-lg font-bold">{cluster.stats?.indices.count || 0}</p>
-            </div>
+            <p className="text-xs text-muted-foreground">{t('indices')}</p>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/clusters/${cluster.id}`)
-              }}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              管理
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/clusters/${cluster.id}/indices`)
-              }}
-            >
-              <Database className="mr-2 h-4 w-4" />
-              索引
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/clusters/${cluster.id}/query`)
-              }}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              查询
-            </Button>
+          <div className="space-y-1 border-l pl-4">
+            <div className="flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">
+                {cluster.stats?.indices?.store?.size_in_bytes
+                  ? formatBytes(cluster.stats.indices.store.size_in_bytes)
+                  : '0 B'}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('storage')}</p>
+          </div>
+          <div className="space-y-1 border-l pl-4">
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">
+                {cluster.health?.number_of_nodes || '0'}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('nodes')}</p>
           </div>
         </div>
       </CardContent>
+      <CardFooter className="grid grid-cols-3 gap-2 p-2">
+        {quickActions.map((action) => (
+          <Button
+            key={action.label}
+            variant="outline"
+            size="sm"
+            className="w-full hover:bg-primary/10 hover:text-primary"
+            asChild
+          >
+            <Link href={action.href} className="flex items-center justify-center gap-2">
+              <action.icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{action.label}</span>
+            </Link>
+          </Button>
+        ))}
+      </CardFooter>
     </Card>
   )
-} 
+}

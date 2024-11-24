@@ -1,17 +1,21 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState } from "react"
 import { ClusterCard } from "@/components/cluster/cluster-card"
 import { Button } from "@/components/ui/button"
-import { Database, HardDrive, Settings, Activity, Search, RefreshCw } from "lucide-react"
-import Link from "next/link"
-import { formatBytes } from "@/lib/utils"
+import { Database, HardDrive, Activity, RefreshCw, Share2, List } from "lucide-react"
+import { formatBytes, cn } from "@/lib/utils"
 import { AddClusterButton } from "@/components/cluster/add-cluster-button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { ApiResponse, ClusterSummary } from "@/types/api"
 import { ClusterOverview } from "@/types/cluster"
+import { HealthFilter } from "@/types/filter"
+import { useTranslations } from 'next-intl'
+import { StatsCard } from "@/components/dashboard/stats-card"
+import { ClusterFilter } from "@/components/dashboard/cluster-filter"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -20,11 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
+import Link from "next/link"
 
 function LoadingState() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-8">
       <div className="flex items-center justify-between">
         <div className="h-8 w-48 animate-pulse rounded bg-muted"></div>
         <div className="flex gap-2">
@@ -48,6 +52,7 @@ function LoadingState() {
 
 function ClusterOverviewContent() {
   const { toast } = useToast()
+  const t = useTranslations('home.overview')
   const [clusters, setClusters] = useState<ClusterOverview[]>([])
   const [filteredClusters, setFilteredClusters] = useState<ClusterOverview[]>([])
   const [summary, setSummary] = useState<ClusterSummary>({
@@ -67,14 +72,14 @@ function ClusterOverviewContent() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [healthFilter, setHealthFilter] = useState("all")
+  const [healthFilter, setHealthFilter] = useState<HealthFilter>("all")
 
   async function getClusters(): Promise<ClusterOverview[]> {
     const response = await fetch("/api/clusters/overview")
     if (!response.ok) {
       toast({
-        title: "获取集群概览失败",
-        description: "请稍后再试",
+        title: t('error.get_clusters.title'),
+        description: t('error.get_clusters.description'),
         variant: "destructive",
       })
       return []
@@ -109,11 +114,10 @@ function ClusterOverviewContent() {
         unhealthyClusters++
       }
 
-      // 统计分片状态
       if (cluster.health) {
         const health = cluster.health
-        totalShards += health.active_shards + health.relocating_shards + 
-                      health.initializing_shards + health.unassigned_shards
+        totalShards += health.active_shards + health.relocating_shards +
+          health.initializing_shards + health.unassigned_shards
         activeShards += health.active_shards
         relocatingShards += health.relocating_shards
         initializingShards += health.initializing_shards
@@ -148,8 +152,8 @@ function ClusterOverviewContent() {
     } catch (error) {
       console.error('Failed to refresh data:', error)
       toast({
-        title: "刷新数据失败",
-        description: "请稍后再试",
+        title: t('error.refresh.title'),
+        description: t('error.refresh.description'),
         variant: "destructive",
       })
     } finally {
@@ -157,22 +161,33 @@ function ClusterOverviewContent() {
     }
   }
 
-  const filterClusters = (clusters: ClusterOverview[], search: string, health: string) => {
+  const filterClusters = (clusters: ClusterOverview[], search: string, health: HealthFilter) => {
     let filtered = clusters
-    
+
     if (search) {
-      filtered = filtered.filter(cluster => 
+      filtered = filtered.filter(cluster =>
         cluster.name.toLowerCase().includes(search.toLowerCase()) ||
         cluster.url.toLowerCase().includes(search.toLowerCase())
       )
     }
 
     if (health !== 'all') {
-      filtered = filtered.filter(cluster => cluster.health?.status === health)
+      filtered = filtered.filter(cluster => {
+        if (health === 'healthy') {
+          return cluster.health?.status === 'green' || cluster.health?.status === 'yellow'
+        } else if (health === 'unhealthy') {
+          return cluster.health?.status === 'red'
+        }
+        return true
+      })
     }
 
     setFilteredClusters(filtered)
   }
+
+  useEffect(() => {
+    filterClusters(clusters, searchTerm, healthFilter)
+  }, [clusters, searchTerm, healthFilter])
 
   useEffect(() => {
     async function fetchData() {
@@ -180,15 +195,14 @@ function ClusterOverviewContent() {
       try {
         const clustersData = await getClusters()
         setClusters(clustersData)
-        console.log(clustersData)
         setFilteredClusters(clustersData)
         const summaryData = await getSummary(clustersData)
         setSummary(summaryData)
       } catch (error) {
         console.error('Failed to fetch data:', error)
         toast({
-          title: "获取数据失败",
-          description: "请稍后再试",
+          title: t('error.get_clusters.title'),
+          description: t('error.get_clusters.description'),
           variant: "destructive",
         })
       } finally {
@@ -197,188 +211,119 @@ function ClusterOverviewContent() {
     }
 
     fetchData()
-  }, [toast])
-
-  useEffect(() => {
-    filterClusters(clusters, searchTerm, healthFilter)
-  }, [searchTerm, healthFilter, clusters])
+  }, [])
 
   if (loading) {
     return <LoadingState />
   }
 
-  const healthyPercentage = summary.totalClusters > 0
-    ? (summary.healthyClusters / summary.totalClusters) * 100
-    : 0
-
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">集群概览</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              管理和监控您的 OpenSearch 集群
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={refreshData}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            <Link href="/clusters">
-              <Button variant="outline">
-                <Settings className="mr-2 h-4 w-4" />
-                管理集群
-              </Button>
+    <div className="flex h-full flex-col gap-4 py-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('description')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshData}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {t('button.refresh')}
+          </Button>
+          <AddClusterButton />
+          <Button variant="outline" size="sm">
+            <Link href="/clusters" className="flex justify-between">
+              <List className="mr-2 h-4 w-4" />
+              {t('manage')}
             </Link>
-            <AddClusterButton />
-          </div>
+          </Button>
         </div>
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">集群健康度</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold">{summary.healthyClusters} / {summary.totalClusters}</div>
-                <Progress value={healthyPercentage} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  {summary.unhealthyClusters} 个集群异常
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">索引数量</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.totalIndices}</div>
-              <p className="text-xs text-muted-foreground">
-                {clusters.length} 个集群
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">存储空间</CardTitle>
-              <HardDrive className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatBytes(summary.totalStorage)}</div>
-              <p className="text-xs text-muted-foreground">
-                总存储容量
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">分片状态</CardTitle>
-              <div className="flex -space-x-2">
-                <div className={`h-2 w-2 rounded-full ${summary.shards.unassigned > 0 ? 'bg-red-500' : 'bg-green-500'}`} />
-                <div className={`h-2 w-2 rounded-full ${summary.shards.initializing > 0 ? 'bg-yellow-500' : 'bg-green-500'}`} />
-                <div className={`h-2 w-2 rounded-full ${summary.shards.relocating > 0 ? 'bg-blue-500' : 'bg-green-500'}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold">{summary.shards.active} / {summary.shards.total}</div>
-                <Progress value={(summary.shards.active / summary.shards.total) * 100} className="h-2" />
-                <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <span>初始化: {summary.shards.initializing}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span>迁移中: {summary.shards.relocating}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-red-500" />
-                    <span>未分配: {summary.shards.unassigned}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                    <span>活跃: {summary.shards.active}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatsCard
+          title={t('total_clusters')}
+          value={summary.totalClusters}
+          description={t('clusters_stats', {
+            healthy: summary.healthyClusters,
+            unhealthy: summary.unhealthyClusters
+          })}
+          icon={Activity}
+        />
+        <StatsCard
+          title={t('total_indices')}
+          value={summary.totalIndices}
+          description={t('indices_stats')}
+          icon={Database}
+        />
+        <StatsCard
+          title={t('total_storage')}
+          value={formatBytes(summary.totalStorage)}
+          description={t('storage_stats')}
+          icon={HardDrive}
+        />
+        <StatsCard
+          title={t('shards_status')}
+          value={summary.shards.active}
+          description={t('shards.total', {
+            active: summary.shards.active,
+            total: summary.shards.total,
+            percent: Math.round((summary.shards.active / summary.shards.total) * 100)
+          })}
+          icon={Share2}
+        />
+      </div>
 
-        {clusters.length > 0 && (
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="border-b p-4">
+          <div className="flex items-center justify-between space-x-4">
+            <h2 className="text-lg font-semibold">{t('clusters')}</h2>
+            <div className="flex flex-1 space-x-4 justify-end">
               <Input
-                placeholder="搜索集群名称或地址..."
-                className="pl-8"
+                placeholder={t('search.placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-[300px]"
               />
+              <Select
+                value={healthFilter}
+                onValueChange={(value) => setHealthFilter(value as HealthFilter)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t('filter.health.placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('filter.health.all')}</SelectItem>
+                  <SelectItem value="healthy">{t('filter.health.healthy')}</SelectItem>
+                  <SelectItem value="unhealthy">{t('filter.health.unhealthy')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select
-              value={healthFilter}
-              onValueChange={setHealthFilter}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="按健康状态筛选" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="green">健康</SelectItem>
-                <SelectItem value="yellow">警告</SelectItem>
-                <SelectItem value="red">异常</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-        )}
-
-        <div className="flex-1">
-          {clusters.length === 0 ? (
-            <div className="flex flex-col items-center justify-center">
-              <div className="flex h-[450px] shrink-0 items-center justify-center rounded-md border border-dashed">
-                <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-                  <Database className="h-10 w-10 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">没有集群</h3>
-                  <p className="mb-4 mt-2 text-sm text-muted-foreground">
-                    您还没有添加任何集群。添加一个集群来开始管理和监控您的 OpenSearch 服务。
-                  </p>
-                  <AddClusterButton />
-                </div>
-              </div>
-            </div>
-          ) : filteredClusters.length === 0 ? (
-            <div className="flex flex-col items-center justify-center">
-              <div className="flex h-[200px] shrink-0 items-center justify-center rounded-md border border-dashed border-muted-foreground/25">
-                <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center px-4">
-                  <Search className="h-8 w-8 text-muted-foreground" />
-                  <h3 className="mt-3 text-lg font-semibold">未找到匹配的集群</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    尝试使用不同的搜索条件或筛选条件
+        </div>
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              {filteredClusters.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <p className="text-lg font-medium">{t('no_clusters')}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('try_different_filter')}
                   </p>
                 </div>
-              </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredClusters.map((cluster) => (
+                    <ClusterCard key={cluster.id} cluster={cluster} />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <ScrollArea className="h-[calc(100vh-25rem)] w-full rounded-md">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1">
-                {filteredClusters.map((cluster) => (
-                  <ClusterCard key={cluster.id} cluster={cluster} />
-                ))}
-              </div>
-            </ScrollArea>
-          )}
+          </ScrollArea>
         </div>
       </div>
     </div>

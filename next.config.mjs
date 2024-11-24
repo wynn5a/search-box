@@ -28,7 +28,9 @@ const nextConfig = {
 import bundleAnalyzer from '@next/bundle-analyzer'
 import createNextIntlPlugin from 'next-intl/plugin';
 
-const withNextIntl = createNextIntlPlugin();
+// 配置国际化
+const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
+
 const withBundleAnalyzer = bundleAnalyzer({
     enabled: process.env.ANALYZE === 'true',
 })
