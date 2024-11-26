@@ -1,5 +1,3 @@
-import { ClusterOverview } from "./cluster"
-
 export interface ApiResponse<T> {
   success: boolean
   data?: T

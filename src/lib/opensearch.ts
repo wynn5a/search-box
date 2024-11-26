@@ -36,7 +36,7 @@ class OpenSearchClient {
     })
 
     let auth: { username: string; password: string } | undefined = undefined
-    
+
     if (config.username && config.password) {
       try {
         const decryptedPassword = decrypt(config.password)
@@ -70,7 +70,7 @@ class OpenSearchClient {
 
   public static async getInstance(config: ClusterConfig): Promise<OpenSearchClient> {
     const key = `${config.id}-${config.url}-${config.username}`
-    
+
     try {
       // 如果启用了 SSH 隧道，先创建隧道
       if (config.sshEnabled && config.id && config.sshHost && config.sshUser) {
@@ -117,7 +117,7 @@ class OpenSearchClient {
           )
         }
       }
-      
+
       return OpenSearchClient.instances.get(key)!
     } catch (error) {
       // 如果出错，清理隧道
@@ -137,7 +137,7 @@ class OpenSearchClient {
     customErrorMessage?: string
   ): Promise<T> {
     let lastError: Error | null = null
-    
+
     for (let i = 0; i < this.retryCount; i++) {
       try {
         const result = await operation()
@@ -158,10 +158,10 @@ class OpenSearchClient {
     )
   }
 
-  public async executeQuery(params: { 
-    method: string, 
-    path: string, 
-    body?: any 
+  public async executeQuery(params: {
+    method: string,
+    path: string,
+    body?: any
   }) {
     return this.withRetry(async () => {
       const { method, path, body } = params
@@ -191,6 +191,7 @@ class OpenSearchClient {
         format: "json",
         bytes: "b",
         h: "health,status,index,uuid,pri,rep,docs.count,docs.deleted,store.size,pri.store.size",
+        expand_wildcards: "all"
       })
       return Array.isArray(response.body) ? response.body : []
     }, 'Failed to list indices')
@@ -240,12 +241,11 @@ class OpenSearchClient {
       ])
 
       // 计算所有索引的总文档数和存储大小
-      const totalDocs = Array.isArray(indices.body) ? 
+      const totalDocs = Array.isArray(indices.body) ?
         indices.body.reduce((sum, index) => sum + (parseInt(index['docs.count'] || '0')), 0) : 0
-      
+
       const totalSize = Array.isArray(indices.body) ?
         indices.body.reduce((sum, index) => sum + (parseInt(index['store.size'] || '0')), 0) : 0
-
       return {
         indices: {
           count: stats.body?.indices?.count ?? 0,
@@ -257,9 +257,9 @@ class OpenSearchClient {
             total_data_set_size_in_bytes: totalSize,
           },
         },
-        nodes: stats.body?.nodes ?? {
-          count: 0,
-          versions: [],
+        nodes: {
+          count: stats.body?.nodes?.count?.total ?? 0,
+          versions: stats.body?.nodes?.versions ?? [],
         },
       }
     }, 'Failed to get cluster stats')
@@ -391,11 +391,9 @@ class OpenSearchClient {
 
   public async getIndexMapping(indexName: string) {
     return this.withRetry(async () => {
-      console.log('Getting mapping for index:', indexName)
       const response = await this.client.indices.getMapping({
         index: indexName
       })
-      console.log('Mapping response:', response.body)
       const mapping = response.body[indexName]?.mappings?.properties
       if (!mapping) {
         console.log('No mapping found, using empty mapping')
@@ -411,9 +409,8 @@ class OpenSearchClient {
 
   // 根据 mapping 生成示例文档
   private generateDocumentTemplate(mapping: Record<string, any>): Record<string, any> {
-    console.log('Generating template from mapping:', mapping)
     const template: Record<string, any> = {}
-    
+
     for (const [field, config] of Object.entries(mapping)) {
       if (config.type === 'object' && config.properties) {
         template[field] = this.generateDocumentTemplate(config.properties)

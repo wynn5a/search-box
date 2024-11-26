@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Database, HardDrive, Files, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { set } from "date-fns"
 
 interface IndexStats {
   health: string

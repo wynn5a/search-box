@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { ClusterConfig } from "@/types/cluster"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslations } from "next-intl"
 
 interface ClusterBreadcrumbProps {
   clusterId: string
@@ -13,6 +14,7 @@ interface ClusterBreadcrumbProps {
 }
 
 export function ClusterBreadcrumb({ clusterId, currentPage, indexName }: ClusterBreadcrumbProps) {
+  const t = useTranslations()
   const [cluster, setCluster] = useState<ClusterConfig | null>(null)
   const { toast } = useToast()
 
@@ -27,8 +29,8 @@ export function ClusterBreadcrumb({ clusterId, currentPage, indexName }: Cluster
       } catch (error) {
         console.error("Error fetching cluster:", error)
         toast({
-          title: "获取集群信息失败",
-          description: "请检查集群是否存在",
+          title: t("cluster.breadcrumb.load_failed.title"),
+          description: t("cluster.breadcrumb.load_failed.description"),
           variant: "destructive",
         })
       }
@@ -44,10 +46,10 @@ export function ClusterBreadcrumb({ clusterId, currentPage, indexName }: Cluster
           href="/clusters" 
           className="hover:text-foreground transition-colors"
         >
-          集群列表
+          {t("cluster.breadcrumb.clusters")}
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground">加载中...</span>
+        <span className="text-foreground">{t("cluster.breadcrumb.loading")}</span>
       </div>
     )
   }
@@ -58,11 +60,11 @@ export function ClusterBreadcrumb({ clusterId, currentPage, indexName }: Cluster
         href="/clusters" 
         className="hover:text-foreground transition-colors"
       >
-        集群列表
+        {t("cluster.breadcrumb.clusters")}
       </Link>
       <ChevronRight className="h-4 w-4" />
       <Link 
-        href={indexName?`/clusters/${clusterId}/indices`:`/clusters/${clusterId}`}
+        href={indexName ? `/clusters/${clusterId}/indices` : `/clusters/${clusterId}`}
         className="hover:text-foreground transition-colors"
       >
         {cluster.name}
@@ -71,4 +73,4 @@ export function ClusterBreadcrumb({ clusterId, currentPage, indexName }: Cluster
       <span className="text-foreground">{currentPage}</span>
     </div>
   )
-} 
+}

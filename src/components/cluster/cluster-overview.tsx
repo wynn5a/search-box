@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, Database, HardDrive, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 
 interface ClusterStats {
   health: {
@@ -37,6 +38,7 @@ interface ClusterOverviewProps {
 }
 
 export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
+  const t = useTranslations()
   const [stats, setStats] = useState<ClusterStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -48,11 +50,10 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
       if (!response.ok) throw new Error("Failed to fetch cluster stats")
       const data = await response.json()
       if (!data.success) throw new Error(data.error || "Failed to fetch stats")
-      console.log(data.data)
       setStats(data.data)
       setError(null)
     } catch (error) {
-      setError("获取集群统计信息失败")
+      setError(t("cluster.overview.error.load_failed"))
       console.error(error)
     } finally {
       setLoading(false)
@@ -71,8 +72,8 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>错误</AlertTitle>
-        <AlertDescription>{error || "无法加载集群统计信息"}</AlertDescription>
+        <AlertTitle>{t("common.error")}</AlertTitle>
+        <AlertDescription>{error || t("cluster.overview.error.load_failed")}</AlertDescription>
       </Alert>
     )
   }
@@ -100,7 +101,7 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">集群状态</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("cluster.overview.status.title")}</CardTitle>
           <Badge 
             variant={safeGet(stats, ['health', 'status']) === "green" ? "default" : "destructive"}
             className={cn(
@@ -112,16 +113,18 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
           </Badge>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{safeGet(stats, ['health', 'number_of_nodes'])} 个节点</div>
+          <div className="text-2xl font-bold">
+            {t("cluster.overview.status.nodes", { count: safeGet(stats, ['health', 'number_of_nodes']) })}
+          </div>
           <p className="text-xs text-muted-foreground">
-            {safeGet(stats, ['health', 'active_shards'])} 活动分片
+            {t("cluster.overview.version") + ' ' + safeGet(stats, ['stats', 'nodes', 'versions']) }
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">索引数量</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("cluster.overview.indices.title")}</CardTitle>
           <Database className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -130,7 +133,9 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
           </div>
           {safeGet(stats, ['stats', 'indices', 'docs', 'count']) > 0 && (
             <p className="text-xs text-muted-foreground">
-              {formatNumber(safeGet(stats, ['stats', 'indices', 'docs', 'count']))} 个文档
+              {t("cluster.overview.indices.docs", { 
+                count: formatNumber(safeGet(stats, ['stats', 'indices', 'docs', 'count'])) 
+              })}
             </p>
           )}
         </CardContent>
@@ -138,7 +143,7 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">存储大小</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("cluster.overview.storage.title")}</CardTitle>
           <HardDrive className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -146,27 +151,33 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
             {formatBytes(safeGet(stats, ['stats', 'indices', 'store', 'size_in_bytes']))}
           </div>
           <p className="text-xs text-muted-foreground">
-            总存储空间
+            {t("cluster.overview.storage.total")}
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">分片状态</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("cluster.overview.shards.title")}</CardTitle>
           <Layers className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{safeGet(stats, ['health', 'active_shards'])}</div>
           <div className="flex items-center space-x-2 text-xs text-muted-foreground">
             {safeGet(stats, ['health', 'relocating_shards']) > 0 && (
-              <span>{safeGet(stats, ['health', 'relocating_shards'])} 迁移中</span>
+              <span>{t("cluster.overview.shards.relocating", { 
+                count: safeGet(stats, ['health', 'relocating_shards']) 
+              })}</span>
             )}
             {safeGet(stats, ['health', 'initializing_shards']) > 0 && (
-              <span>{safeGet(stats, ['health', 'initializing_shards'])} 初始化中</span>
+              <span>{t("cluster.overview.shards.initializing", { 
+                count: safeGet(stats, ['health', 'initializing_shards']) 
+              })}</span>
             )}
             {safeGet(stats, ['health', 'unassigned_shards']) > 0 && (
-              <span className="text-destructive">{safeGet(stats, ['health', 'unassigned_shards'])} 未分配</span>
+              <span className="text-destructive">{t("cluster.overview.shards.unassigned", { 
+                count: safeGet(stats, ['health', 'unassigned_shards']) 
+              })}</span>
             )}
           </div>
         </CardContent>
@@ -192,4 +203,4 @@ function ClusterOverviewSkeleton() {
       ))}
     </div>
   )
-} 
+}

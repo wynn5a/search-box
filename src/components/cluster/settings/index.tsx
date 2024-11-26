@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
@@ -19,14 +18,18 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { JsonViewerContainer } from "@/components/json-viewer"
+import { useTranslations } from "next-intl"
 import type { ClusterSettings as ClusterSettingsType, SettingGroup, SettingType } from "./types"
 import { organizeSettings } from "./utils"
+import { Search, RefreshCw, Database, DatabaseZap, Package } from "lucide-react"
+import cn from "clsx"
 
 interface Props {
   clusterId: string
 }
 
 export function ClusterSettings({ clusterId }: Props) {
+  const t = useTranslations()
   const { toast } = useToast()
   const [settings, setSettings] = useState<ClusterSettingsType | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -42,15 +45,15 @@ export function ClusterSettings({ clusterId }: Props) {
         setSettings(data.data)
       } else {
         toast({
-          title: "获取设置失败",
+          title: t("cluster.settings.error.load_failed.title"),
           description: data.error,
           variant: "destructive"
         })
       }
     } catch (error) {
       toast({
-        title: "获取设置失败",
-        description: error instanceof Error ? error.message : "未知错误",
+        title: t("cluster.settings.error.load_failed.title"),
+        description: error instanceof Error ? error.message : t("common.error.unknown"),
         variant: "destructive"
       })
     } finally {
@@ -64,7 +67,7 @@ export function ClusterSettings({ clusterId }: Props) {
 
   const renderSettingValue = (value: any) => {
     if (value === null || value === undefined) {
-      return <span className="text-muted-foreground">-</span>;
+      return <span className="text-muted-foreground">{t("common.value.empty")}</span>;
     }
 
     if (Array.isArray(value)) {
@@ -136,7 +139,7 @@ export function ClusterSettings({ clusterId }: Props) {
             {group.name}
             {depth > 0 && (
               <Badge variant="outline" className="text-xs">
-                Level {depth}
+                {t("cluster.settings.level", { level: depth })}
               </Badge>
             )}
           </CardTitle>
@@ -147,7 +150,7 @@ export function ClusterSettings({ clusterId }: Props) {
         <CardContent>
           {entries.length > 0 && (
             <div className="space-y-2">
-              {entries.map(([key, value], index) => (
+              {entries.map(([key, value], _index) => (
                 <div key={key} className="flex items-start gap-4">
                   <div className="font-mono text-sm text-muted-foreground min-w-[200px] pt-1">
                     {key}
@@ -187,79 +190,65 @@ export function ClusterSettings({ clusterId }: Props) {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      
-      <div className="mb-6 flex items-center gap-4 justify-between">
-        <Input
-          placeholder="搜索设置..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <div className="relative w-[300px]">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("cluster.settings.search.placeholder")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <Tabs defaultValue="persistent" value={selectedType} onValueChange={(v) => setSelectedType(v as SettingType)}>
+            <TabsList>
+              <TabsTrigger value="persistent">
+                <Database className="mr-2 h-4 w-4" />
+                {t("cluster.settings.type.persistent")}
+              </TabsTrigger>
+              <TabsTrigger value="transient">
+                <DatabaseZap className="mr-2 h-4 w-4" />
+                {t("cluster.settings.type.transient")}
+              </TabsTrigger>
+              <TabsTrigger value="defaults">
+                <Package className="mr-2 h-4 w-4" />
+                {t("cluster.settings.type.defaults")}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
         <Button
-          variant="outline"
+          variant="ghost"
+          size="sm"
           onClick={fetchSettings}
           disabled={loading}
         >
-          刷新
+          <RefreshCw className={cn(
+            "h-4 w-4 mr-2",
+            loading && "animate-spin"
+          )} />
+          {t("common.button.refresh")}
         </Button>
       </div>
 
-      <Tabs value={selectedType} onValueChange={(v) => setSelectedType(v as SettingType)}>
-        <TabsList>
-          <TabsTrigger value="persistent">持久设置</TabsTrigger>
-          <TabsTrigger value="transient">临时设置</TabsTrigger>
-          <TabsTrigger value="defaults">默认设置</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="persistent">
-          <ScrollArea className="h-[calc(100vh-100px)]">
+      <div className="flex-1 min-h-0">
+        <ScrollArea className="h-[350px]">
+          <div className="space-y-4 pr-4">
             {loading ? (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-40">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
               </div>
             ) : (
-              getSettingsForType('persistent').map((group, index) => (
+              getSettingsForType(selectedType).map((group, index) => (
                 <div key={index}>
                   {renderSettingGroup(group)}
                 </div>
               ))
             )}
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="transient">
-          <ScrollArea className="h-[600px]">
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : (
-              getSettingsForType('transient').map((group, index) => (
-                <div key={index}>
-                  {renderSettingGroup(group)}
-                </div>
-              ))
-            )}
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="defaults">
-          <ScrollArea className="h-[600px]">
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : (
-              getSettingsForType('defaults').map((group, index) => (
-                <div key={index}>
-                  {renderSettingGroup(group)}
-                </div>
-              ))
-            )}
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   )
 }

@@ -8,7 +8,30 @@
       "save": "保存",
       "cancel": "取消",
       "test": "测试连接",
-      "close": "关闭"
+      "close": "关闭",
+      "delete": "删除"
+    },
+    "status": {
+      "healthy": "健康",
+      "warning": "警告",
+      "error": "异常",
+      "unknown": "未知",
+      "green": "绿色",
+      "yellow": "黄色",
+      "red": "红色"
+    },
+    "time": {
+      "just_now": "刚刚",
+      "minutes_ago": "{count}分钟前",
+      "hours_ago": "{count}小时前",
+      "days_ago": "{count}天前",
+      "never": "从未连接"
+    },
+    "error": {
+      "unknown": "未知错误"
+    },
+    "value": {
+      "empty": "-"
     }
   },
   "home": {
@@ -155,21 +178,145 @@
       "nodes": "{count} 个节点",
       "indices": "{count} 个索引",
       "documents": "{count} 个文档"
+    },
+    "page": {
+      "overview": "概览",
+      "query": "数据查询",
+      "tabs": {
+        "indices": "索引列表",
+        "settings": "集群设置"
+      }
+    },
+    "overview": {
+      "version": "版本",
+      "error": {
+        "load_failed": "无法加载集群统计信息"
+      },
+      "status": {
+        "title": "集群状态",
+        "nodes": "{count} 个节点",
+        "shards": "{count} 个活动分片"
+      },
+      "indices": {
+        "title": "索引",
+        "docs": "{count} 个文档"
+      },
+      "storage": {
+        "title": "存储大小",
+        "total": "总存储空间"
+      },
+      "shards": {
+        "title": "分片状态",
+        "relocating": "{count} 个迁移中",
+        "initializing": "{count} 个初始化中",
+        "unassigned": "{count} 个未分配"
+      }
+    },
+    "breadcrumb": {
+      "clusters": "集群列表",
+      "loading": "加载中...",
+      "load_failed": {
+        "title": "获取集群信息失败",
+        "description": "请检查集群是否存在"
+      }
+    },
+    "indices": {
+      "title": "索引",
+      "error": {
+        "load_failed": {
+          "title": "获取索引列表失败",
+          "description": "请稍后重试"
+        }
+      },
+      "type": {
+        "all": "所有索引",
+        "user": "用户索引",
+        "system": "系统索引"
+      },
+      "table": {
+        "health": "健康状态",
+        "name": "名称",
+        "docs": "文档数",
+        "size": "大小",
+        "status": "状态",
+        "shards": "分片数"
+      },
+      "empty": "没有找到索引",
+      "search": {
+        "placeholder": "搜索索引..."
+      }
+    },
+    "settings": {
+      "error": {
+        "load_failed": {
+          "title": "获取设置失败",
+          "description": "请稍后重试"
+        }
+      },
+      "search": {
+        "placeholder": "搜索设置..."
+      },
+      "type": {
+        "persistent": "持久设置",
+        "transient": "临时设置",
+        "defaults": "默认设置"
+      },
+      "level": "层级 {level}"
     }
   },
   "clusters": {
-    "title": "集群列表",
+    "title": "集群",
     "description": "管理您的 OpenSearch 集群",
     "indices": "索引",
     "storage": "存储",
     "version": "版本",
     "nodes": "节点",
-    "url": "URL",
+    "url": "地址",
     "unknown": "未知",
     "button": {
       "details": "详情",
       "indices": "索引",
-      "search": "查询"
+      "search": "搜索"
+    },
+    "list": {
+      "title": "集群列表",
+      "refresh_status": "刷新状态",
+      "empty": {
+        "title": "没有集群",
+        "description": "您还没有添加任何集群。添加一个集群来开始管理和监控您的 OpenSearch 服务。"
+      },
+      "table": {
+        "status": "状态",
+        "name": "名称",
+        "connection": "连接信息",
+        "last_connected": "最近连接",
+        "created_at": "添加时间",
+        "actions": "操作"
+      },
+      "connection": {
+        "no_auth": "无认证",
+        "basic_auth": "Basic 认证",
+        "ssh_tunnel": "SSH 隧道"
+      },
+      "testing": {
+        "in_progress": "测试中...",
+        "test_connection": "测试连接"
+      },
+      "delete": {
+        "title": "确认删除",
+        "description": "确定要删除集群 \"{name}\"？此操作无法撤销。",
+        "success": "集群已删除",
+        "success_description": "集群配置已成功删除",
+        "error": "删除失败",
+        "error_description": "请稍后重试"
+      },
+      "test": {
+        "success": "连接成功",
+        "success_description": "可以正常连接到集群",
+        "error": "连接失败",
+        "error_description": "无法连接到集群，请检查配置",
+        "timeout": "连接超时，请检查网络或集群地址"
+      }
     }
   }
 }

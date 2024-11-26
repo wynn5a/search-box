@@ -1,47 +1,61 @@
-import { 
+import {
   ClusterOverview,
   ClusterBreadcrumb,
   ClusterSettings,
-  ClusterIndices 
+  ClusterIndices
 } from "@/components/cluster"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Search } from "lucide-react"
+import { List, Search, Settings } from "lucide-react"
 import Link from "next/link"
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function ClusterPage(props: { params: Promise<{ clusterId: string }> }) {
+interface Props {
+  params: Promise<{ clusterId: string }>
+}
+
+export default async function ClusterPage(props: Props) {
   const params = await props.params;
+  const t = await getTranslations()
+
   return (
-    <div className="flex flex-col space-y-6">
-      <div className="px-6 py-3 border-b">
-        <div className="flex items-center justify-between">
-          <ClusterBreadcrumb clusterId={params.clusterId} currentPage="概览" />
+    <div className="flex flex-col h-[calc(100vh-65px)]">
+      <div className="flex items-center justify-between border-b px-6 py-3">
+        <div className="flex items-center space-x-2">
+          <ClusterBreadcrumb
+            clusterId={params.clusterId}
+            currentPage={t('cluster.page.overview')}
+          />
+        </div>
+        <div className="flex items-center space-x-2">
           <Link href={`/clusters/${params.clusterId}/query`}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Search className="h-4 w-4" />
-              数据查询
+            <Button variant="outline" size="sm">
+              <Search className="mr-2 h-4 w-4" />
+              {t('cluster.page.query')}
             </Button>
           </Link>
         </div>
       </div>
-      <div className="p-6 space-y-6">
+      <div className="flex-1 min-h-0 space-y-6 p-6">
         <ClusterOverview clusterId={params.clusterId} />
-        <Tabs defaultValue="indices" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="indices">索引列表</TabsTrigger>
-            <TabsTrigger value="settings">集群设置</TabsTrigger>
-          </TabsList>
-          <TabsContent value="indices" className="space-y-4">
-            <ClusterIndices clusterId={params.clusterId} />
-          </TabsContent>
-          <TabsContent value="settings" className="space-y-4">
-            <ClusterSettings clusterId={params.clusterId} />
-          </TabsContent>
-        </Tabs>
+        <div className="flex space-x-2 items-center">
+          <Tabs defaultValue="indices" className="flex-1">
+            <TabsList className="mb-2">
+              <TabsTrigger value="indices"><List className="mr-2 h-4 w-4" />{t('cluster.page.tabs.indices')}</TabsTrigger>
+              <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" />{t('cluster.page.tabs.settings')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="indices" className="flex-1 mt-2 data-[state=active]:flex data-[state=active]:flex-col">
+              <ClusterIndices clusterId={params.clusterId} />
+            </TabsContent>
+            <TabsContent value="settings" className="flex-1 mt-2 data-[state=active]:flex data-[state=active]:flex-col">
+              <ClusterSettings clusterId={params.clusterId} />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   )
-} 
+}

@@ -8,7 +8,30 @@
       "save": "Save",
       "cancel": "Cancel",
       "test": "Test Connection",
-      "close": "Close"
+      "close": "Close",
+      "delete": "Delete"
+    },
+    "status": {
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "error": "Error",
+      "unknown": "Unknown",
+      "green": "Green",
+      "yellow": "Yellow",
+      "red": "Red"
+    },
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "{count} minutes ago",
+      "hours_ago": "{count} hours ago",
+      "days_ago": "{count} days ago",
+      "never": "Never connected"
+    },
+    "error": {
+      "unknown": "Unknown error"
+    },
+    "value": {
+      "empty": "-"
     }
   },
   "home": {
@@ -155,6 +178,90 @@
       "nodes": "{count} nodes",
       "indices": "{count} indices",
       "documents": "{count} documents"
+    },
+    "page": {
+      "overview": "Overview",
+      "query": "Query",
+      "tabs": {
+        "indices": "Indices",
+        "settings": "Settings"
+      }
+    },
+    "overview": {
+      "version": "Version",
+      "error": {
+        "load_failed": "Failed to load cluster statistics"
+      },
+      "status": {
+        "title": "Cluster Status",
+        "nodes": "{count} Nodes",
+        "shards": "{count} Active Shards"
+      },
+      "indices": {
+        "title": "Indices",
+        "docs": "{count} Documents"
+      },
+      "storage": {
+        "title": "Storage Size",
+        "total": "Total Storage"
+      },
+      "shards": {
+        "title": "Shards Status",
+        "relocating": "{count} Relocating",
+        "initializing": "{count} Initializing",
+        "unassigned": "{count} Unassigned"
+      }
+    },
+    "breadcrumb": {
+      "clusters": "Clusters",
+      "loading": "Loading...",
+      "load_failed": {
+        "title": "Failed to load cluster",
+        "description": "Please check if the cluster exists"
+      }
+    },
+    "indices": {
+      "title": "Indices",
+      "error": {
+        "load_failed": {
+          "title": "Failed to load indices",
+          "description": "Please try again later"
+        }
+      },
+      "type": {
+        "all": "All Indices",
+        "user": "User Indices",
+        "system": "System Indices"
+      },
+      "table": {
+        "health": "Health",
+        "name": "Name",
+        "docs": "Documents",
+        "size": "Size",
+        "status": "Status",
+        "shards": "Shards"
+      },
+      "empty": "No indices found",
+      "search": {
+        "placeholder": "Search indices..."
+      }
+    },
+    "settings": {
+      "error": {
+        "load_failed": {
+          "title": "Failed to load settings",
+          "description": "Please try again later"
+        }
+      },
+      "search": {
+        "placeholder": "Search settings..."
+      },
+      "type": {
+        "persistent": "Persistent Settings",
+        "transient": "Transient Settings",
+        "defaults": "Default Settings"
+      },
+      "level": "Level {level}"
     }
   },
   "clusters": {
@@ -170,6 +277,46 @@
       "details": "Details",
       "indices": "Indices",
       "search": "Search"
+    },
+    "list": {
+      "title": "Cluster List",
+      "refresh_status": "Refresh Status",
+      "empty": {
+        "title": "No Clusters",
+        "description": "You haven't added any clusters yet. Add a cluster to start managing and monitoring your OpenSearch service."
+      },
+      "table": {
+        "status": "Status",
+        "name": "Name",
+        "connection": "Connection Info",
+        "last_connected": "Last Connected",
+        "created_at": "Created At",
+        "actions": "Actions"
+      },
+      "connection": {
+        "no_auth": "No Auth",
+        "basic_auth": "Basic Auth",
+        "ssh_tunnel": "SSH Tunnel"
+      },
+      "testing": {
+        "in_progress": "Testing...",
+        "test_connection": "Test Connection"
+      },
+      "delete": {
+        "title": "Confirm Delete",
+        "description": "Are you sure you want to delete cluster \"{name}\"? This action cannot be undone.",
+        "success": "Cluster Deleted",
+        "success_description": "The cluster configuration has been successfully deleted",
+        "error": "Failed to Delete",
+        "error_description": "Please try again later"
+      },
+      "test": {
+        "success": "Connection Successful",
+        "success_description": "Successfully connected to the cluster",
+        "error": "Connection Failed",
+        "error_description": "Unable to connect to the cluster, please check the configuration",
+        "timeout": "Connection timeout, please check your network or cluster address"
+      }
     }
   }
 }

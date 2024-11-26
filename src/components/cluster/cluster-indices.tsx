@@ -12,19 +12,19 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, RefreshCw, Database, Cog, ListFilter } from "lucide-react"
+import { Search, RefreshCw, Cog, ListFilter, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
-import { ScrollArea } from "../ui/scroll-area"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Badge } from "../ui/badge"
+import { useTranslations } from "next-intl"
+import { ScrollArea } from "../ui/scroll-area"
 
 interface IndexInfo {
   health: string
@@ -46,6 +46,7 @@ interface ClusterIndicesProps {
 }
 
 export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
+  const t = useTranslations()
   const [indices, setIndices] = useState<IndexInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -64,8 +65,8 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
     } catch (error) {
       console.error(error)
       toast({
-        title: "获取索引列表失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("cluster.indices.error.load_failed.title"),
+        description: t("cluster.indices.error.load_failed.description"),
         variant: "destructive",
       })
       setIndices([])
@@ -108,127 +109,126 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
     }
   }
 
+  const formatNumber = (num: number) => {
+    return num.toLocaleString()
+  }
+
   if (loading) {
     return <LoadingSkeleton />
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2 w-full max-w-sm">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="搜索索引..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-9"
-          />
-        </div>
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <Tabs value={indexType} onValueChange={(value) => setIndexType(value as IndexType)}>
+          <div className="relative w-[300px]">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("cluster.indices.search.placeholder")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <Tabs defaultValue="user" value={indexType} onValueChange={(value) => setIndexType(value as IndexType)}>
             <TabsList>
+              <TabsTrigger value="all">
+                <ListFilter className="h-4 w-4 mr-2" />
+                {t("cluster.indices.type.all")}
+              </TabsTrigger>
               <TabsTrigger value="user">
-                <Database className="h-4 w-4 mr-2" />
-                用户索引
+                <User className="h-4 w-4 mr-2" />
+                {t("cluster.indices.type.user")}
               </TabsTrigger>
               <TabsTrigger value="system">
                 <Cog className="h-4 w-4 mr-2" />
-                系统索引
-              </TabsTrigger>
-              <TabsTrigger value="all">
-                <ListFilter className="h-4 w-4 mr-2" />
-                全部
+                {t("cluster.indices.type.system")}
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={fetchIndices}
-                  disabled={refreshing}
-                >
-                  <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>刷新索引列表</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => router.push(`/clusters/${clusterId}/indices`)}
-                >
-                  <Cog className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>索引管理</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={fetchIndices}
+          disabled={refreshing}
+        >
+          <RefreshCw className={cn(
+            "h-4 w-4 mr-2",
+            refreshing && "animate-spin"
+          )} />
+          {t("common.button.refresh")}
+        </Button>
       </div>
 
-      <div className="rounded-lg border">
-        <ScrollArea className="h-[calc(100vh-450px)]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-center">状态</TableHead>
-              <TableHead className="text-left">索引名称</TableHead>
-              <TableHead className="text-right">主分片</TableHead>
-              <TableHead className="text-right">副本分片</TableHead>
-              <TableHead className="text-right">文档数</TableHead>
-              <TableHead className="text-right">已删除</TableHead>
-              <TableHead className="text-right">存储大小</TableHead>
-              <TableHead className="text-right">主分片大小</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredIndices.length === 0 ? (
+      <div className="flex-1 min-h-0 border rounded overflow-auto">
+        <ScrollArea className="h-[350px]">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  没有找到匹配的索引
-                </TableCell>
+                <TableHead className="w-[100px] text-center sticky top-0 bg-background">
+                  {t("cluster.indices.table.health")}
+                </TableHead>
+                <TableHead className="sticky top-0 bg-background">
+                  {t("cluster.indices.table.name")}
+                </TableHead>
+                <TableHead className="text-right sticky top-0 bg-background">
+                  {t("cluster.indices.table.docs")}
+                </TableHead>
+                <TableHead className="text-right sticky top-0 bg-background">
+                  {t("cluster.indices.table.size")}
+                </TableHead>
+                <TableHead className="text-right sticky top-0 bg-background">
+                  {t("cluster.indices.table.status")}
+                </TableHead>
+                <TableHead className="text-right sticky top-0 bg-background">
+                  {t("cluster.indices.table.shards")}
+                </TableHead>
               </TableRow>
-            ) : (
-              filteredIndices.map((index) => (
-                <TableRow 
-                  key={index.index}
-                  className="hover:bg-muted/50"
-                >
-                  <TableCell className="text-center items-center">
-                    <div className="flex items-center gap-2 justify-center">
-                      <div className={cn(
-                        "h-2 w-2 rounded-full",
-                        getHealthColor(index.health)
-                      )} />
-                      <Badge variant="secondary" className="capitalize">{index.status.toLowerCase()}</Badge>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <LoadingSkeleton />
+              ) : filteredIndices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    {t("cluster.indices.empty")}
                   </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{index.index}</div>
-                    <div className="text-xs text-muted-foreground">{index.uuid}</div>
-                  </TableCell>
-                  <TableCell className="text-right">{index.pri}</TableCell>
-                  <TableCell className="text-right">{index.rep}</TableCell>
-                  <TableCell className="text-right">{index["docs.count"].toLocaleString()}</TableCell>
-                  <TableCell className="text-right">{index["docs.deleted"].toLocaleString()}</TableCell>
-                  <TableCell className="text-right font-medium">{index["store.size"]}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{index["pri.store.size"]}</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredIndices.map((index) => (
+                  <TableRow
+                    key={index.uuid}
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/clusters/${clusterId}/indices/${index.index}`)}
+                  >
+                    <TableCell className="text-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <div className={cn(
+                              "h-2 w-2 rounded-full mx-auto",
+                              getHealthColor(index.health)
+                            )} />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="capitalize">{t(`common.status.${index.health}`)}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{index.index}</div>
+                    </TableCell>
+                    <TableCell className="text-right">{formatNumber(index["docs.count"])}</TableCell>
+                    <TableCell className="text-right">{index["store.size"]}</TableCell>
+                    <TableCell className="text-right capitalize">{index.status}</TableCell>
+                    <TableCell className="text-right">{index.pri}/{index.rep}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </ScrollArea>
       </div>
     </div>
@@ -254,4 +254,4 @@ function LoadingSkeleton() {
       </div>
     </div>
   )
-} 
+}

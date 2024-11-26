@@ -1,6 +1,6 @@
 import { Client } from 'ssh2'
 import { createServer, Server } from 'net'
-import { ConnectConfig, AuthenticationType, AuthHandlerMiddleware } from 'ssh2'
+import { ConnectConfig, AuthenticationType} from 'ssh2'
 import { EventEmitter } from 'events'
 import { decrypt } from './utils/crypto'
 

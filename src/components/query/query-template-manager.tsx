@@ -90,7 +90,7 @@ export function QueryTemplateManager({
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save template",
+        description: error instanceof Error ? error.message : "Failed to save template",
         variant: "destructive",
       })
     }

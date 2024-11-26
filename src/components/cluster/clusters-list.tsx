@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils"
 import { AddClusterButton } from "@/components/cluster/add-cluster-button"
 import { Database } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTranslations } from "next-intl"
 
 interface ClusterWithHealth extends ClusterConfig {
   health?: {
@@ -45,6 +46,7 @@ interface ClusterWithHealth extends ClusterConfig {
 }
 
 export function ClustersList() {
+  const t = useTranslations()
   const [clusters, setClusters] = useState<ClusterWithHealth[]>([])
   const [loading, setLoading] = useState(true)
   const [healthLoading, setHealthLoading] = useState<Record<string, boolean>>({})
@@ -68,8 +70,8 @@ export function ClustersList() {
       })))
     } catch (error) {
       toast({
-        title: "获取集群列表失败",
-        description: "请稍后重试",
+        title: t("common.error.title"),
+        description: t("common.error.description"),
         variant: "destructive",
       })
       setClusters([])
@@ -138,15 +140,15 @@ export function ClustersList() {
       if (!response.ok) throw new Error("Failed to delete cluster")
       
       toast({
-        title: "集群已删除",
-        description: "集群配置已成功删除",
+        title: t("clusters.list.delete.success.title"),
+        description: t("clusters.list.delete.success.description"),
       })
       
       fetchClusters()
     } catch (error) {
       toast({
-        title: "删除集群失败",
-        description: "请稍后重试",
+        title: t("common.error.title"),
+        description: t("common.error.description"),
         variant: "destructive",
       })
     } finally {
@@ -168,18 +170,16 @@ export function ClustersList() {
       const result = await response.json()
       
       toast({
-        title: result.success ? "连接成功" : "连接失败",
+        title: result.success ? t("clusters.list.testing.success.title") : t("clusters.list.testing.error.title"),
         description: result.success 
-          ? "可以正常连接到集群" 
-          : "无法连接到集群，请检查配置",
+          ? t("clusters.list.testing.success.description") 
+          : t("clusters.list.testing.error.description"),
         variant: result.success ? "default" : "destructive",
       })
     } catch (error) {
       toast({
-        title: "测试连接失败",
-        description: error instanceof Error && error.message === 'AbortError' 
-          ? "连接超时，请检查网络或集群地址" 
-          : "请稍后重试",
+        title: t("common.error.title"),
+        description: t("common.error.description"),
         variant: "destructive",
       })
     } finally {
@@ -203,49 +203,43 @@ export function ClustersList() {
   const getStatusText = (status?: string) => {
     switch (status?.toLowerCase()) {
       case "green":
-        return "健康"
+        return t("common.status.healthy")
       case "yellow":
-        return "警告"
+        return t("common.status.warning")
       case "red":
-        return "异常"
+        return t("common.status.error")
       default:
-        return "未知"
+        return t("common.status.unknown")
     }
   }
 
   const formatLastConnected = (timestamp?: Date | null) => {
-    if (!timestamp) return '从未连接'
+    if (!timestamp) return t("common.time.never")
     const date = new Date(timestamp)
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     
     // 如果在1分钟内
     if (diff < 60000) {
-      return '刚刚'
+      return t("common.time.just_now")
     }
     // 如果在1小时内
     if (diff < 3600000) {
       const minutes = Math.floor(diff / 60000)
-      return `${minutes}分钟前`
+      return t("common.time.minutes_ago", { count: minutes })
     }
     // 如果在24小时内
     if (diff < 86400000) {
       const hours = Math.floor(diff / 3600000)
-      return `${hours}小时前`
+      return t("common.time.hours_ago", { count: hours })
     }
     // 如果在7天内
     if (diff < 604800000) {
       const days = Math.floor(diff / 86400000)
-      return `${days}天前`
+      return t("common.time.days_ago", { count: days })
     }
     // 其他情况显示完整日期
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    return date.toLocaleDateString()
   }
 
   const sortedClusters = useMemo(() => {
@@ -302,9 +296,9 @@ export function ClustersList() {
             <Database className="h-8 w-8 text-primary" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-semibold">没有集群</h3>
+            <h3 className="text-xl font-semibold">{t("clusters.list.empty.title")}</h3>
             <p className="text-sm text-muted-foreground">
-              您还没有添加任何集群。添加一个集群来开始管理和监控您的 OpenSearch 服务。
+              {t("clusters.list.empty.description")}
             </p>
           </div>
           <AddClusterButton />
@@ -318,7 +312,7 @@ export function ClustersList() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Network className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">集群列表</h2>
+          <h2 className="text-lg font-semibold">{t("clusters.list.title")}</h2>
           <Badge variant="secondary">{clusters.length}</Badge>
         </div>
         <Button 
@@ -331,7 +325,7 @@ export function ClustersList() {
             "h-4 w-4 mr-2",
             Object.values(healthLoading).some(Boolean) && "animate-spin"
           )} />
-          刷新状态
+          {t("clusters.list.refresh_status")}
         </Button>
       </div>
       <div className="rounded-lg border bg-card">
@@ -339,7 +333,7 @@ export function ClustersList() {
           <TableHeader>
             <TableRow>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-muted/50 text-center"
                 onClick={() => {
                   if (sortBy === 'status') {
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
@@ -349,14 +343,14 @@ export function ClustersList() {
                   }
                 }}
               >
-                状态 {sortBy === 'status' && sortOrder === 'asc' && <ChevronDown className="inline h-4 w-4 ml-1" />}
+                {t("clusters.list.table.status")} {sortBy === 'status' && sortOrder === 'asc' && <ChevronDown className="inline h-4 w-4 ml-1" />}
                 {sortBy === 'status' && sortOrder === 'desc' && <ChevronUp className="inline h-4 w-4 ml-1" />}
               </TableHead>
-              <TableHead>名称</TableHead>
-              <TableHead>连接信息</TableHead>
-              <TableHead>最近连接</TableHead>
-              <TableHead>添加时间</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+              <TableHead>{t("clusters.list.table.name")}</TableHead>
+              <TableHead>{t("clusters.list.table.connection")}</TableHead>
+              <TableHead>{t("clusters.list.table.last_connected")}</TableHead>
+              <TableHead>{t("clusters.list.table.created_at")}</TableHead>
+              <TableHead className="text-center">{t("clusters.list.table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -398,11 +392,11 @@ export function ClustersList() {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="font-normal">
-                        {cluster.username ? "Basic Auth" : "无认证"}
+                        {cluster.username ? t("clusters.list.connection.basic_auth") : t("clusters.list.connection.no_auth")}
                       </Badge>
                       {cluster.sshEnabled && (
                         <Badge variant="secondary" className="font-normal">
-                          SSH 隧道
+                          {t("clusters.list.connection.ssh_tunnel")}
                         </Badge>
                       )}
                     </div>
@@ -440,7 +434,7 @@ export function ClustersList() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{testingCluster === cluster.id ? "测试中..." : "测试连接"}</p>
+                          <p>{testingCluster === cluster.id ? t("clusters.list.testing.in_progress") : t("clusters.list.testing.test_connection")}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -457,7 +451,7 @@ export function ClustersList() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>删除集群</p>
+                          <p>{t("common.button.delete")}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -475,22 +469,22 @@ export function ClustersList() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除集群</AlertDialogTitle>
+            <AlertDialogTitle>{t("clusters.list.delete.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除集群 "{clusterToDelete?.name}"？此操作无法撤销。
+              {t("clusters.list.delete.description", { name: clusterToDelete?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.button.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => clusterToDelete && deleteCluster(clusterToDelete)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              删除
+              {t("common.button.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   )
-} 
+}

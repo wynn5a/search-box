@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { ClusterCard } from "@/components/cluster/cluster-card"
 import { Button } from "@/components/ui/button"
 import { Database, HardDrive, Activity, RefreshCw, Share2, List } from "lucide-react"
-import { formatBytes, cn } from "@/lib/utils"
+import { formatBytes } from "@/lib/utils"
 import { AddClusterButton } from "@/components/cluster/add-cluster-button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
@@ -13,9 +13,6 @@ import { ClusterOverview } from "@/types/cluster"
 import { HealthFilter } from "@/types/filter"
 import { useTranslations } from 'next-intl'
 import { StatsCard } from "@/components/dashboard/stats-card"
-import { ClusterFilter } from "@/components/dashboard/cluster-filter"
-import { Card, CardHeader, CardContent } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import {
   Select,

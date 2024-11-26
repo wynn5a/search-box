@@ -1,9 +1,9 @@
-# OpenSearch Manager
+# SearchBox
 
 <div align="center">
   <p>A powerful and modern web interface for managing multiple OpenSearch clusters</p>
   
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![License: MIT](https://img.shields.io/badge/License-GUN%20GPL%20v3-green.svg)](https://opensource.org/license/gpl-3-0)
   [![Next.js](https://img.shields.io/badge/Next.js-13+-black)](https://nextjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0+-38B2AC)](https://tailwindcss.com/)
@@ -84,27 +84,24 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/opensearch-manager.git
-   cd opensearch-manager
+   git clone https://github.com/yourusername/search-box.git
+   cd search-box
    ```
 
 2. Install dependencies:
    ```bash
-   npm install
-   # or
    yarn install
    ```
 
 3. Set up environment variables:
    ```bash
-   cp .env.example .env.local
+   cp .env.example .env
    ```
-   Edit `.env.local` with your configuration
+   Edit `.env` with your configuration
 
 4. Start the development server:
    ```bash
-   npm run dev
-   # or
+   npx prisma generate
    yarn dev
    ```
 
