@@ -56,9 +56,7 @@ export function QueryBody({
             automaticLayout: true,
             formatOnPaste: !isBulkOperation,
             formatOnType: !isBulkOperation,
-            readOnly: readOnly,
-            // 禁用 JSON 验证
-            validate: !isBulkOperation,
+            readOnly: readOnly
           }}
         />
       </div>

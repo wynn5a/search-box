@@ -1,40 +1,131 @@
 # OpenSearch Manager
 
-OpenSearch Manager is a modern web interface for managing and monitoring multiple OpenSearch clusters.
+<div align="center">
+  <p>A powerful and modern web interface for managing multiple OpenSearch clusters</p>
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Next.js](https://img.shields.io/badge/Next.js-13+-black)](https://nextjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0+-38B2AC)](https://tailwindcss.com/)
+</div>
 
-## Features
+## ✨ Features
 
-- 🌐 Multi-cluster Management: Manage multiple OpenSearch clusters simultaneously
-- 🔒 Secure Connections: Support for Basic Auth and SSH tunneling
-- 📊 Real-time Monitoring: View cluster health, node count, index statistics, and more
-- 📑 Index Management: Create, delete, open/close indices, and modify settings
-- 🔍 Data Query: Built-in query editor with template support
-- 🎨 Modern UI: Responsive interface built with Next.js and Tailwind CSS
+- 🌐 **Multi-cluster Management**
+  - Manage and monitor multiple OpenSearch clusters from a single dashboard
+  - Real-time cluster health monitoring
+  - Comprehensive cluster statistics and metrics
 
-## Tech Stack
+- 🔒 **Advanced Security**
+  - Support for Basic Authentication
+  - SSH tunneling capabilities for secure remote connections
+  - Secure credential management
 
-- **Frontend**: Next.js 13+, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Database**: Prisma with PostgreSQL
-- **Dependencies**: 
-  - OpenSearch Client
-  - SSH2 (for SSH tunneling)
-  - D3.js (for data visualization)
-  - shadcn/ui (UI components)
+- 📊 **Powerful Monitoring**
+  - Real-time cluster health monitoring
+  - Node status and statistics
+  - Index metrics and shard distribution
+  - Storage usage analytics
+  - Custom dashboard with key metrics
 
-## Getting Started
+- 📑 **Index Management**
+  - Create and delete indices
+  - Modify index settings and mappings
+  - Monitor index health and statistics
+  - Manage index lifecycle
+
+- 🔍 **Data Query Interface**
+  - Built-in query editor with syntax highlighting
+  - Query templates support
+  - Results visualization
+  - Export capabilities
+
+- 🎨 **Modern User Experience**
+  - Clean and intuitive interface
+  - Responsive design for all devices
+  - Dark/Light theme support
+  - i18n support (English/Chinese)
+
+## 🛠 Tech Stack
+
+### Frontend
+- **Framework**: [Next.js 13+](https://nextjs.org/) with App Router
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **State Management**: React Context + Hooks
+- **Form Handling**: React Hook Form + Zod
+- **UI Components**: 
+  - [shadcn/ui](https://ui.shadcn.com/)
+  - [Radix UI](https://www.radix-ui.com/)
+  - [Lucide Icons](https://lucide.dev/)
+
+### Backend
+- **API**: Next.js API Routes
+- **Database**: [Prisma](https://www.prisma.io/) with PostgreSQL
+- **Authentication**: NextAuth.js
+- **OpenSearch Client**: Official OpenSearch JavaScript Client
+- **SSH Tunneling**: SSH2
+
+### Developer Experience
+- **Code Quality**: 
+  - ESLint
+  - Prettier
+  - TypeScript strict mode
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 20+
 - npm or yarn
+- PostgreSQL (for production)
 
 ### Installation
 
-1. Clone the repository
-2. Install dependencies
-3. Run the development server
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/opensearch-manager.git
+   cd opensearch-manager
+   ```
 
-## License
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Edit `.env.local` with your configuration
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## 📝 License
+
+This project is licensed under the GNU GPLv3 License - see the [LICENSE](LICENSE) file for details
+
+## 🙏 Acknowledgments
+
+- [OpenSearch](https://opensearch.org/) for the amazing search engine
+- [Vercel](https://vercel.com) for the excellent deployment platform
+- All our contributors and users
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by the community</sub>
+</div>

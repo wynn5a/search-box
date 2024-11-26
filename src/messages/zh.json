@@ -19,10 +19,10 @@
       "description": "监控和管理您的 OpenSearch 集群",
       "manage": "管理集群",
       "total_clusters": "集群总数",
-      "clusters_stats": "{healthy} 个健康，{unhealthy} 个不健康",
       "total_indices": "索引总数",
-      "indices_stats": "所有集群的索引总数",
       "total_storage": "存储总量",
+      "clusters_stats": "{healthy} 个健康，{unhealthy} 个不健康",
+      "indices_stats": "所有集群的索引总数",
       "storage_stats": "所有集群的存储总量",
       "shards_status": "分片状态",
       "active_shards": "活跃分片",
@@ -158,19 +158,18 @@
     }
   },
   "clusters": {
-    "status": {
-      "unknown": "未知"
-    },
+    "title": "集群列表",
+    "description": "管理您的 OpenSearch 集群",
     "indices": "索引",
     "storage": "存储",
     "version": "版本",
     "nodes": "节点",
+    "url": "URL",
     "unknown": "未知",
     "button": {
       "details": "详情",
       "indices": "索引",
-      "search": "查询",
-      "refresh": "刷新"
+      "search": "查询"
     }
   }
 }
