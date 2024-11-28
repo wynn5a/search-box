@@ -28,20 +28,21 @@ import { Badge } from "@/components/ui/badge"
 import { RefreshCw, Save, Plus, Trash, Edit, Code } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useTranslations } from "next-intl"
 
 const FIELD_TYPES = [
-  { value: 'text', label: '文本' },
-  { value: 'keyword', label: '关键字' },
-  { value: 'long', label: '长整数' },
-  { value: 'integer', label: '整数' },
-  { value: 'short', label: '短整数' },
-  { value: 'byte', label: '字节' },
-  { value: 'double', label: '双精度' },
-  { value: 'float', label: '单精度' },
-  { value: 'boolean', label: '布尔值' },
-  { value: 'date', label: '日期' },
-  { value: 'object', label: '对象' },
-  { value: 'nested', label: '嵌套' },
+  { value: 'text', label: 'text' },
+  { value: 'keyword', label: 'keyword' },
+  { value: 'long', label: 'long' },
+  { value: 'integer', label: 'integer' },
+  { value: 'short', label: 'short' },
+  { value: 'byte', label: 'byte' },
+  { value: 'double', label: 'double' },
+  { value: 'float', label: 'float' },
+  { value: 'boolean', label: 'boolean' },
+  { value: 'date', label: 'date' },
+  { value: 'object', label: 'object' },
+  { value: 'nested', label: 'nested' },
 ]
 
 const ANALYZERS = [
@@ -81,15 +82,16 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
   const [showJson, setShowJson] = useState(false)
   const { toast } = useToast()
   const [fieldToDelete, setFieldToDelete] = useState<string | null>(null)
+  const t = useTranslations("index")
 
   const fetchMappings = async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/clusters/${clusterId}/indices/${indexName}/mappings`)
-      if (!response.ok) throw new Error("Failed to fetch mappings")
+      if (!response.ok) throw new Error(t("mappings.messages.fetch_failed"))
       const data = await response.json()
-      if (!data.success) throw new Error(data.error || "Failed to fetch mappings")
-      
+      if (!data.success) throw new Error(data.error || t("mappings.messages.fetch_failed"))
+
       console.log(data.data)
 
       // 从响应中提取字段配置
@@ -109,8 +111,8 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
       setFields(processedFields)
     } catch (error) {
       toast({
-        title: "获取索引映射失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("mappings.messages.fetch_failed"),
+        description: error instanceof Error ? error.message : t("settings.messages.try_again"),
         variant: "destructive",
       })
     } finally {
@@ -144,20 +146,20 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
         body: JSON.stringify({ properties }),
       })
 
-      if (!response.ok) throw new Error("Failed to update mappings")
+      if (!response.ok) throw new Error(t("mappings.messages.update_failed"))
       const data = await response.json()
-      if (!data.success) throw new Error(data.error || "Failed to update mappings")
+      if (!data.success) throw new Error(data.error || t("mappings.messages.update_failed"))
 
       toast({
-        title: "映射已更新",
-        description: "索引映射已成功更新",
+        title: t("mappings.messages.save_success"),
+        description: t("mappings.messages.save_description"),
       })
 
       await fetchMappings()
     } catch (error) {
       toast({
-        title: "更新映射失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("mappings.messages.update_failed"),
+        description: error instanceof Error ? error.message : t("settings.messages.try_again"),
         variant: "destructive",
       })
     } finally {
@@ -170,13 +172,13 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
       // 更新字段列表
       setFields(fields.filter((f: FieldConfig) => f.name !== fieldName))
       toast({
-        title: "字段已删除",
-        description: "请记得保存更改以应用到索引",
+        title: t("mappings.messages.delete_success"),
+        description: t("mappings.messages.delete_description"),
       })
     } catch (error) {
       toast({
-        title: "删除字段失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("mappings.messages.delete_failed"),
+        description: error instanceof Error ? error.message : t("settings.messages.try_again"),
         variant: "destructive",
       })
     } finally {
@@ -213,12 +215,9 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="flex justify-between">
-          <Skeleton className="h-10 w-[200px]" />
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-[100px]" />
-            <Skeleton className="h-10 w-[100px]" />
-          </div>
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-9 w-[100px]" />
         </div>
         <Skeleton className="h-[400px] w-full" />
       </div>
@@ -226,9 +225,9 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">索引映射</h3>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">{t("mappings.labels.title")}</h3>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -236,15 +235,17 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
             onClick={() => setShowJson(!showJson)}
           >
             <Code className="h-4 w-4 mr-2" />
-            {showJson ? "表格视图" : "JSON 视图"}
+            {showJson ? t("mappings.actions.view_table") : t("mappings.actions.view_json")}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={fetchMappings}
+            disabled={loading}
+            loading={loading}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            刷新
+            {t("settings.actions.refresh")}
           </Button>
           <Button
             variant="outline"
@@ -257,15 +258,17 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
             })}
           >
             <Plus className="h-4 w-4 mr-2" />
-            添加字段
+            {t("mappings.actions.add")}
           </Button>
           <Button
+            variant={"outline"}
             size="sm"
             onClick={saveMappings}
             disabled={saving}
+            loading={saving}
           >
             <Save className="h-4 w-4 mr-2" />
-            保存
+            {t("mappings.actions.save")}
           </Button>
         </div>
       </div>
@@ -273,7 +276,7 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
       {showJson ? (
         <Card>
           <CardContent className="p-4">
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[300px]">
               <pre className="text-sm">
                 {JSON.stringify(convertToOpenSearchMapping(fields), null, 2)}
               </pre>
@@ -283,52 +286,38 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
       ) : (
         <Card>
           <CardContent className="p-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>字段名</TableHead>
-                  <TableHead>字段类型</TableHead>
-                  <TableHead>是否索引</TableHead>
-                  <TableHead>是否存储</TableHead>
-                  <TableHead>分词器</TableHead>
-                  <TableHead>其他设置</TableHead>
-                  <TableHead>操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fields.length === 0 ? (
+            <ScrollArea className="h-[300px]">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      没有字段配置
-                    </TableCell>
+                    <TableHead>{t("mappings.labels.name")}</TableHead>
+                    <TableHead>{t("mappings.labels.type")}</TableHead>
+                    <TableHead className="w-[100px]">{t("mappings.labels.index")}</TableHead>
+                    <TableHead className="w-[100px]">{t("mappings.labels.store")}</TableHead>
+                    <TableHead>{t("mappings.labels.analyzer")}</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
                   </TableRow>
-                ) : (
-                  fields.map((field: FieldConfig) => (
-                    <TableRow key={field.name}>
-                      <TableCell>{field.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {FIELD_TYPES.find(t => t.value === field.type)?.label || field.type}
-                        </Badge>
+                </TableHeader>
+                <TableBody>
+                  {fields.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        {t("mappings.messages.no_mappings")}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={field.index ? "default" : "secondary"}>
-                          {field.index ? "是" : "否"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={field.store ? "default" : "secondary"}>
-                          {field.store ? "是" : "否"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{field.analyzer || "-"}</TableCell>
-                      <TableCell>
-                        {field.format ? `format: ${field.format}` : ""}
-                        {field.fields ? "multi-fields" : ""}
-                        {field.properties ? "properties" : ""}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                    </TableRow>
+                  ) : (
+                    fields.map((field: FieldConfig) => (
+                      <TableRow key={field.name}>
+                        <TableCell>{field.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {t(`mappings.field_types.${field.type}`)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{field.index !== false ? "✓" : "✗"}</TableCell>
+                        <TableCell>{field.store === true ? "✓" : "✗"}</TableCell>
+                        <TableCell>{field.analyzer || "-"}</TableCell>
+                        <TableCell className="text-right space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -343,78 +332,100 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </CardContent>
         </Card>
       )}
 
-      <Dialog open={!!editingField} onOpenChange={(open) => !open && setEditingField(null)}>
+      <Dialog open={!!editingField} onOpenChange={() => setEditingField(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingField?.name ? "编辑字段" : "添加字段"}</DialogTitle>
+            <DialogTitle>
+              {editingField?.name ? t("mappings.dialogs.edit.title") : t("mappings.dialogs.add.title")}
+            </DialogTitle>
             <DialogDescription>
-              配置字段的类型和属性
+              {editingField?.name ? t("mappings.dialogs.edit.description") : t("mappings.dialogs.add.description")}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">字段名</Label>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("mappings.labels.name")}</Label>
               <Input
-                className="col-span-3"
-                value={editingField?.name || ''}
-                onChange={(e) => setEditingField(prev => ({ ...prev!, name: e.target.value }))}
+                id="name"
+                value={editingField?.name || ""}
+                onChange={(e) =>
+                  setEditingField((prev) =>
+                    prev ? { ...prev, name: e.target.value } : null
+                  )
+                }
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">字段类型</Label>
+            <div className="space-y-2">
+              <Label htmlFor="type">{t("mappings.labels.type")}</Label>
               <Select
-                value={editingField?.type}
-                onValueChange={(value) => setEditingField(prev => ({ ...prev!, type: value }))}
+                value={editingField?.type || "text"}
+                onValueChange={(value) =>
+                  setEditingField((prev) =>
+                    prev ? { ...prev, type: value } : null
+                  )
+                }
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FIELD_TYPES.map(type => (
+                  {FIELD_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                      {t(`mappings.field_types.${type.value}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">是否索引</Label>
+            <div className="space-y-2">
+              <Label>{t("mappings.labels.index")}</Label>
               <Switch
-                checked={editingField?.index}
-                onCheckedChange={(checked) => setEditingField(prev => ({ ...prev!, index: checked }))}
+                checked={editingField?.index !== false}
+                onCheckedChange={(checked) =>
+                  setEditingField((prev) =>
+                    prev ? { ...prev, index: checked } : null
+                  )
+                }
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">是否存储</Label>
+            <div className="space-y-2">
+              <Label>{t("mappings.labels.store")}</Label>
               <Switch
-                checked={editingField?.store}
-                onCheckedChange={(checked) => setEditingField(prev => ({ ...prev!, store: checked }))}
+                checked={editingField?.store === true}
+                onCheckedChange={(checked) =>
+                  setEditingField((prev) =>
+                    prev ? { ...prev, store: checked } : null
+                  )
+                }
               />
             </div>
             {editingField?.type === 'text' && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">分词器</Label>
+              <div className="space-y-2">
+                <Label>{t("mappings.labels.analyzer")}</Label>
                 <Select
-                  value={editingField?.analyzer}
-                  onValueChange={(value) => setEditingField(prev => ({ ...prev!, analyzer: value }))}
+                  value={editingField?.analyzer || ""}
+                  onValueChange={(value) =>
+                    setEditingField((prev) =>
+                      prev ? { ...prev, analyzer: value } : null
+                    )
+                  }
                 >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue />
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择分析器" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ANALYZERS.map(analyzer => (
+                    {ANALYZERS.map((analyzer) => (
                       <SelectItem key={analyzer} value={analyzer}>
                         {analyzer}
                       </SelectItem>
@@ -424,12 +435,15 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
               </div>
             )}
             {editingField?.type === 'date' && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">日期格式</Label>
+              <div className="space-y-2">
+                <Label>{t("mappings.labels.format")}</Label>
                 <Input
-                  className="col-span-3"
-                  value={editingField?.format || ''}
-                  onChange={(e) => setEditingField(prev => ({ ...prev!, format: e.target.value }))}
+                  value={editingField?.format || ""}
+                  onChange={(e) =>
+                    setEditingField((prev) =>
+                      prev ? { ...prev, format: e.target.value } : null
+                    )
+                  }
                   placeholder="yyyy-MM-dd HH:mm:ss"
                 />
               </div>
@@ -437,58 +451,50 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingField(null)}>
-              取消
+              {t("mappings.actions.cancel")}
             </Button>
-            <Button onClick={() => {
-              if (editingField) {
-                const isEditing = fields.some((f: FieldConfig) => f.name === editingField.name)
-                if (isEditing) {
-                  setFields(fields.map((f: FieldConfig) => 
-                    f.name === editingField.name ? editingField : f
-                  ))
-                } else {
-                  setFields([...fields, editingField])
+            <Button
+              onClick={() => {
+                if (editingField) {
+                  const existingIndex = fields.findIndex(
+                    (f) => f.name === editingField.name
+                  )
+                  if (existingIndex >= 0) {
+                    setFields((prev) => {
+                      const newFields = [...prev]
+                      newFields[existingIndex] = editingField
+                      return newFields
+                    })
+                  } else {
+                    setFields((prev) => [...prev, editingField])
+                  }
+                  setEditingField(null)
                 }
-                setEditingField(null)
-              }
-            }}>
-              确定
+              }}
+            >
+              {t("mappings.actions.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!fieldToDelete} onOpenChange={(open) => !open && setFieldToDelete(null)}>
+      <Dialog open={!!fieldToDelete} onOpenChange={() => setFieldToDelete(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>删除字段</DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-2">
-                <div>
-                  删除字段 "{fieldToDelete}" 可能会导致数据不一致。建议按照以下步骤操作：
-                </div>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>先迁移或删除包含此字段的文档</li>
-                  <li>重建索引以应用新的映射</li>
-                </ol>
-                <div className="text-destructive">
-                  确定要继续删除此字段吗？
-                </div>
-              </div>
+            <DialogTitle>{t("mappings.dialogs.delete.title")}</DialogTitle>
+            <DialogDescription>
+              {t("mappings.dialogs.delete.description")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setFieldToDelete(null)}
-            >
-              取消
+            <Button variant="outline" onClick={() => setFieldToDelete(null)}>
+              {t("mappings.actions.cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={() => fieldToDelete && deleteField(fieldToDelete)}
             >
-              删除字段
+              {t("mappings.dialogs.delete.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -312,6 +312,9 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
                     if ((e.target as HTMLElement).closest('button, [role="button"]')) {
                       return
                     }
+                    if(index.index.indexOf('.') !== -1) {
+                      return
+                    }
                     router.push(`/clusters/${clusterId}/indices/${index.index}`)
                   }}
                 >

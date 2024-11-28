@@ -247,21 +247,119 @@
       }
     },
     "settings": {
-      "error": {
-        "load_failed": {
-          "title": "Failed to load settings",
-          "description": "Please try again later"
+      "descriptions": {
+        "number_of_replicas": "Number of replicas for each primary shard. Increasing replicas improves availability and read performance but requires more storage.",
+        "refresh_interval": "Index refresh interval determines how soon new data becomes searchable. Shorter intervals increase real-time visibility but may affect write performance.",
+        "max_result_window": "Maximum value for from + size in pagination queries. Increasing this value may consume more memory.",
+        "blocks": {
+          "read_only": "Set index to read-only mode, preventing writes and metadata changes.",
+          "read_only_allow_delete": "Set index to read-only mode but allow delete operations. Usually enabled automatically when disk space is low.",
+          "read": "Prevent read operations on the index.",
+          "write": "Prevent write operations but allow metadata changes."
         }
+      },
+      "labels": {
+        "basic": "Basic Settings",
+        "access": "Access Control",
+        "replicas": "Number of Replicas",
+        "refresh": "Refresh Interval",
+        "window": "Max Result Window",
+        "read_only": "Read Only",
+        "read_only_delete": "Read Only (Allow Delete)",
+        "read": "Block Read",
+        "write": "Block Write"
+      },
+      "actions": {
+        "save": "Save Changes",
+        "refresh": "Refresh"
+      },
+      "messages": {
+        "update_success": "Settings Updated",
+        "update_basic_success": "Basic settings have been updated",
+        "update_access_success": "Access control settings have been updated",
+        "update_failed": "Update Failed",
+        "try_again": "Please try again later",
+        "fetch_failed": "Failed to fetch settings"
+      },
+      "type": {
+        "persistent": "Persistent",
+        "transient": "Transient",
+        "defaults": "Defaults"
       },
       "search": {
         "placeholder": "Search settings..."
+      }
+    },
+    "mappings": {
+      "field_types": {
+        "text": "Text",
+        "keyword": "Keyword",
+        "long": "Long Integer",
+        "integer": "Integer",
+        "short": "Short Integer",
+        "byte": "Byte",
+        "double": "Double",
+        "float": "Float",
+        "boolean": "Boolean",
+        "date": "Date",
+        "object": "Object",
+        "nested": "Nested"
       },
-      "type": {
-        "persistent": "Persistent Settings",
-        "transient": "Transient Settings",
-        "defaults": "Default Settings"
+      "labels": {
+        "title": "Index Mappings",
+        "name": "Field Name",
+        "type": "Field Type",
+        "index": "Indexable",
+        "store": "Store Field",
+        "analyzer": "Analyzer",
+        "search_analyzer": "Search Analyzer",
+        "format": "Format",
+        "advanced": "Advanced Settings",
+        "field_settings": "Configure field properties",
+        "delete_warning": "Deleting field \"{field}\" may cause data inconsistency. Recommended steps:",
+        "migration_steps": {
+          "1": "First migrate or delete documents containing this field",
+          "2": "Rebuild index to apply new mapping"
+        },
+        "delete_confirm": "Are you sure you want to delete this field?"
       },
-      "level": "Level {level}"
+      "actions": {
+        "add": "Add Field",
+        "save": "Save Changes",
+        "refresh": "Refresh",
+        "edit": "Edit Field",
+        "delete": "Delete Field",
+        "view_json": "View JSON",
+        "view_table": "Table View",
+        "confirm": "Confirm",
+        "cancel": "Cancel"
+      },
+      "dialogs": {
+        "add": {
+          "title": "Add New Field",
+          "description": "Configure the new field's properties"
+        },
+        "edit": {
+          "title": "Edit Field",
+          "description": "Modify field properties"
+        },
+        "delete": {
+          "title": "Delete Field",
+          "description": "Are you sure you want to delete this field? This action cannot be undone.",
+          "confirm": "Delete",
+          "cancel": "Cancel"
+        }
+      },
+      "messages": {
+        "save_success": "Mappings Updated",
+        "save_description": "Index mappings have been successfully updated",
+        "delete_success": "Field Deleted",
+        "delete_description": "Remember to save changes to apply to index",
+        "fetch_failed": "Failed to fetch mappings",
+        "update_failed": "Failed to update mappings",
+        "delete_failed": "Failed to delete field",
+        "no_mappings": "No field mappings found"
+      }
     }
   },
   "clusters": {
@@ -316,6 +414,151 @@
         "error": "Connection Failed",
         "error_description": "Unable to connect to the cluster, please check the configuration",
         "timeout": "Connection timeout, please check your network or cluster address"
+      }
+    }
+  },
+  "index": {
+    "tabs": {
+      "settings": "Settings",
+      "mappings": "Mappings"
+    },
+    "overview": {
+      "error": {
+        "title": "Error",
+        "fetch_failed": "Failed to fetch index statistics",
+        "load_failed": "Failed to load index statistics",
+        "operation_failed": "Operation Failed",
+        "try_again": "Please try again later"
+      },
+      "status": {
+        "title": "Index Status",
+        "description": "Current index status",
+        "open": "Open Index",
+        "close": "Close Index",
+        "opened": "Index Opened",
+        "closed": "Index Closed",
+        "success_message": "Index {name} has been successfully {action}"
+      },
+      "shards": {
+        "title": "Shards",
+        "description": "Primary / Replica Shards"
+      },
+      "documents": {
+        "title": "Documents",
+        "deleted": "{count} Deleted"
+      },
+      "storage": {
+        "title": "Storage Size",
+        "primary": "Primary: {size}"
+      }
+    },
+    "settings": {
+      "descriptions": {
+        "number_of_replicas": "Number of replicas for each primary shard. Increasing replicas improves availability and read performance but requires more storage.",
+        "refresh_interval": "Index refresh interval determines how soon new data becomes searchable. Shorter intervals increase real-time visibility but may affect write performance.",
+        "max_result_window": "Maximum value for from + size in pagination queries. Increasing this value may consume more memory.",
+        "blocks": {
+          "read_only": "Set index to read-only mode, preventing writes and metadata changes.",
+          "read_only_allow_delete": "Set index to read-only mode but allow delete operations. Usually enabled automatically when disk space is low.",
+          "read": "Prevent read operations on the index.",
+          "write": "Prevent write operations on the index but allow metadata changes."
+        },
+        "basic": "Configure basic index parameters such as replicas, refresh interval, etc."
+      },
+      "labels": {
+        "basic": "Basic Settings",
+        "access": "Access Control",
+        "replicas": "Number of Replicas",
+        "refresh": "Refresh Interval",
+        "window": "Max Result Window",
+        "read_only": "Read Only",
+        "read_only_delete": "Read Only (Allow Delete)",
+        "read": "Disable Read",
+        "write": "Disable Write"
+      },
+      "actions": {
+        "save": "Save Changes",
+        "refresh": "Refresh"
+      },
+      "messages": {
+        "update_success": "Settings Updated",
+        "update_basic_success": "Basic settings updated",
+        "update_access_success": "Access control settings updated",
+        "update_failed": "Update Failed",
+        "try_again": "Please try again later",
+        "fetch_failed": "Failed to fetch settings"
+      }
+    },
+    "mappings": {
+      "field_types": {
+        "undefined": "Unknown",
+        "text": "Text",
+        "keyword": "Keyword",
+        "long": "Long Integer",
+        "integer": "Integer",
+        "short": "Short Integer",
+        "byte": "Byte",
+        "double": "Double",
+        "float": "Float",
+        "boolean": "Boolean",
+        "date": "Date",
+        "object": "Object",
+        "nested": "Nested"
+      },
+      "labels": {
+        "title": "Index Mappings",
+        "name": "Field Name",
+        "type": "Field Type",
+        "index": "Indexable",
+        "store": "Store Field",
+        "analyzer": "Analyzer",
+        "search_analyzer": "Search Analyzer",
+        "format": "Format",
+        "advanced": "Advanced Settings",
+        "field_settings": "Configure Field Properties",
+        "delete_warning": "Deleting field \"{field}\" may cause data inconsistency. Recommended steps:",
+        "migration_steps": {
+          "1": "First migrate or delete documents containing this field",
+          "2": "Rebuild index to apply new mapping"
+        },
+        "delete_confirm": "Are you sure you want to delete this field?"
+      },
+      "actions": {
+        "add": "Add Field",
+        "save": "Save Changes",
+        "refresh": "Refresh",
+        "edit": "Edit Field",
+        "delete": "Delete Field",
+        "view_json": "View JSON",
+        "view_table": "Table View",
+        "confirm": "Confirm",
+        "cancel": "Cancel"
+      },
+      "dialogs": {
+        "add": {
+          "title": "Add New Field",
+          "description": "Configure properties for the new field"
+        },
+        "edit": {
+          "title": "Edit Field",
+          "description": "Modify field properties"
+        },
+        "delete": {
+          "title": "Delete Field",
+          "description": "Are you sure you want to delete this field? This action cannot be undone.",
+          "confirm": "Delete",
+          "cancel": "Cancel"
+        }
+      },
+      "messages": {
+        "save_success": "Mappings Updated",
+        "save_description": "Index mappings have been successfully updated",
+        "delete_success": "Field Deleted",
+        "delete_description": "Remember to save changes to apply to the index",
+        "fetch_failed": "Failed to fetch mappings",
+        "update_failed": "Failed to update mappings",
+        "delete_failed": "Failed to delete field",
+        "no_mappings": "No field mappings found"
       }
     }
   }

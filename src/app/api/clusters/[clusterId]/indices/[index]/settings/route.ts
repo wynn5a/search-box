@@ -20,10 +20,9 @@ export async function GET(
 
     const client = await OpenSearchClient.getInstance(cluster)
     const settings = await client.getIndexSettings(params.index)
-
     return {
       success: true,
-      data: settings[params.index]?.settings || {}
+      data: settings[params.index] || {}
     }
   })
 }

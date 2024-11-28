@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, Database, HardDrive, Layers, Loader2, Power, PowerOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
+import { Badge } from "../ui/badge"
 
 interface IndexStats {
   health: string
@@ -33,22 +35,22 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
   const [error, setError] = useState<string | null>(null)
   const [operating, setOperating] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations('index.overview')
 
   const fetchStats = async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
-      if (!response.ok) throw new Error("Failed to fetch index stats")
+      if (!response.ok) throw new Error(t('error.fetch_failed'))
       const data = await response.json()
-      if (!data.success) throw new Error(data.error || "Failed to fetch stats")
-      console.log(data)
+      if (!data.success) throw new Error(data.error || t('error.fetch_failed'))
       const indexStats = data.data.find((index: any) => index.index === indexName)
       if (!indexStats) throw new Error("Index not found")
-      
+
       setStats(indexStats)
       setError(null)
     } catch (error) {
-      setError("获取索引统计信息失败")
+      setError(t('error.fetch_failed'))
       console.error(error)
     } finally {
       setLoading(false)
@@ -67,15 +69,18 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
       if (!data.success) throw new Error(data.error || `Failed to ${action} index`)
 
       toast({
-        title: `索引已${action === 'open' ? '开启' : '关闭'}`,
-        description: `索引 ${indexName} 已成功${action === 'open' ? '开启' : '关闭'}`,
+        title: t(action === 'open' ? 'status.opened' : 'status.closed'),
+        description: t('status.success_message', {
+          name: indexName,
+          action: action === 'open' ? t('status.opened').toLowerCase() : t('status.closed').toLowerCase()
+        }),
       })
 
       await fetchStats()
     } catch (error) {
       toast({
-        title: "操作失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t('error.operation_failed'),
+        description: error instanceof Error ? error.message : t('error.try_again'),
         variant: "destructive",
       })
     } finally {
@@ -110,21 +115,22 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>错误</AlertTitle>
-        <AlertDescription>{error || "无法加载索引统计信息"}</AlertDescription>
+        <AlertTitle>{t('error.title')}</AlertTitle>
+        <AlertDescription>{error || t('error.load_failed')}</AlertDescription>
       </Alert>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">{indexName}</h2>
-          <p className="text-sm text-muted-foreground">
-            UUID: {stats.uuid}
-          </p>
+        <div className="text-2xl font-semibold tracking-tight">
+          {indexName}
+          <span className="ml-2 px-1 text-sm text-muted-foreground border rounded-md bg-muted">
+            {stats.uuid}
+          </span>
         </div>
+
         <Button
           variant={stats.status === 'close' ? "default" : "outline"}
           size="sm"
@@ -138,7 +144,7 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
           ) : (
             <PowerOff className="h-4 w-4 mr-2" />
           )}
-          {stats.status === 'close' ? '开启索引' : '关闭索引'}
+          {t(stats.status === 'close' ? 'status.open' : 'status.close')}
         </Button>
       </div>
 
@@ -148,51 +154,48 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
           stats.status.toLowerCase() === "close" && "border-yellow-900"
         )}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">索引状态</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('status.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold capitalize">{stats.status.toLowerCase()}</div>
-            <p className="text-xs text-muted-foreground">
-              当前索引状态
-            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">分片信息</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('shards.title')}</CardTitle>
             <Layers className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pri} / {stats.rep}</div>
             <p className="text-xs text-muted-foreground">
-              主分片 / 副本分片
+              {t('shards.description')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">文档数量</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('documents.title')}</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats["docs.count"]?.toLocaleString() ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats["docs.deleted"]?.toLocaleString() ?? 0} 已删除
+              {t('documents.deleted', { count: stats["docs.deleted"]?.toLocaleString() ?? 0 })}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">存储大小</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('storage.title')}</CardTitle>
             <HardDrive className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats["store.size"]}</div>
             <p className="text-xs text-muted-foreground">
-              主分片: {stats["pri.store.size"]}
+              {t('storage.primary', { size: stats["pri.store.size"] })}
             </p>
           </CardContent>
         </Card>

@@ -247,21 +247,120 @@
       }
     },
     "settings": {
-      "error": {
-        "load_failed": {
-          "title": "获取设置失败",
-          "description": "请稍后重试"
+      "descriptions": {
+        "number_of_replicas": "每个主分片的副本数量。增加副本数可以提高可用性和读取性能，但会占用更多存储空间。",
+        "refresh_interval": "索引的刷新间隔，决定了新写入的数据多久可以被搜索到。较短的间隔会增加实时性但可能影响写入性能。",
+        "max_result_window": "from + size 的最大值，用于分页查询。增大此值可能会占用更多内存。",
+        "blocks": {
+          "read_only": "设置索引为只读模式，禁止写入和元数据修改。",
+          "read_only_allow_delete": "设置索引为只读模式，但允许删除操作。通常在磁盘空间不足时自动启用。",
+          "read": "禁止对索引的读取操作。",
+          "write": "禁止对索引的写入操作，但允许元数据修改。"
         }
       },
-      "search": {
-        "placeholder": "搜索设置..."
+      "labels": {
+        "basic": "基本设置",
+        "access": "访问控制",
+        "replicas": "副本数量",
+        "refresh": "刷新间隔",
+        "window": "最大结果窗口",
+        "read_only": "只读模式",
+        "read_only_delete": "只读（允许删除）",
+        "read": "禁止读取",
+        "write": "禁止写入"
+      },
+      "actions": {
+        "save": "保存更改",
+        "refresh": "刷新"
+      },
+      "messages": {
+        "update_success": "设置已更新",
+        "update_basic_success": "基本设置已更新",
+        "update_access_success": "访问控制设置已更新",
+        "update_failed": "更新失败",
+        "try_again": "请稍后重试",
+        "fetch_failed": "获取设置失败"
       },
       "type": {
-        "persistent": "持久设置",
+        "persistent": "持久化设置",
         "transient": "临时设置",
         "defaults": "默认设置"
       },
-      "level": "层级 {level}"
+      "search": {
+        "placeholder": "搜索设置..."
+      }
+    },
+    "mappings": {
+      "field_types": {
+        "undefined": "未知",
+        "text": "文本",
+        "keyword": "关键字",
+        "long": "长整数",
+        "integer": "整数",
+        "short": "短整数",
+        "byte": "字节",
+        "double": "双精度",
+        "float": "单精度",
+        "boolean": "布尔值",
+        "date": "日期",
+        "object": "对象",
+        "nested": "嵌套"
+      },
+      "labels": {
+        "title": "索引映射",
+        "name": "字段名称",
+        "type": "字段类型",
+        "index": "可索引",
+        "store": "存储字段",
+        "analyzer": "分析器",
+        "search_analyzer": "搜索分析器",
+        "format": "格式",
+        "advanced": "高级设置",
+        "field_settings": "配置字段属性",
+        "delete_warning": "删除字段 \"{field}\" 可能会导致数据不一致。建议按照以下步骤操作：",
+        "migration_steps": {
+          "1": "先迁移或删除包含此字段的文档",
+          "2": "重建索引以应用新的映射"
+        },
+        "delete_confirm": "确定要删除此字段吗？"
+      },
+      "actions": {
+        "add": "添加字段",
+        "save": "保存更改",
+        "refresh": "刷新",
+        "edit": "编辑字段",
+        "delete": "删除字段",
+        "view_json": "查看 JSON",
+        "view_table": "表格视图",
+        "confirm": "确定",
+        "cancel": "取消"
+      },
+      "dialogs": {
+        "add": {
+          "title": "添加新字段",
+          "description": "配置新字段的属性"
+        },
+        "edit": {
+          "title": "编辑字段",
+          "description": "修改字段属性"
+        },
+        "delete": {
+          "title": "删除字段",
+          "description": "确定要删除这个字段吗？此操作无法撤销。",
+          "confirm": "删除",
+          "cancel": "取消"
+        }
+      },
+      "messages": {
+        "save_success": "映射已更新",
+        "save_description": "索引映射已成功更新",
+        "delete_success": "字段已删除",
+        "delete_description": "请记得保存更改以应用到索引",
+        "fetch_failed": "获取映射失败",
+        "update_failed": "更新映射失败",
+        "delete_failed": "删除字段失败",
+        "no_mappings": "没有找到字段映射"
+      }
     }
   },
   "clusters": {
@@ -316,6 +415,150 @@
         "error": "连接失败",
         "error_description": "无法连接到集群，请检查配置",
         "timeout": "连接超时，请检查网络或集群地址"
+      }
+    }
+  },
+  "index": {
+    "tabs": {
+      "settings": "索引设置",
+      "mappings": "映射管理"
+    },
+    "overview": {
+      "error": {
+        "title": "错误",
+        "fetch_failed": "获取索引统计信息失败",
+        "load_failed": "无法加载索引统计信息",
+        "operation_failed": "操作失败",
+        "try_again": "请稍后重试"
+      },
+      "status": {
+        "title": "索引状态",
+        "description": "当前索引状态",
+        "open": "开启索引",
+        "close": "关闭索引",
+        "opened": "索引已开启",
+        "closed": "索引已关闭",
+        "success_message": "索引 {name} 已成功{action}"
+      },
+      "shards": {
+        "title": "分片信息",
+        "description": "主分片 / 副本分片"
+      },
+      "documents": {
+        "title": "文档数量",
+        "deleted": "{count} 已删除"
+      },
+      "storage": {
+        "title": "存储大小",
+        "primary": "主分片: {size}"
+      }
+    },
+    "settings": {
+      "descriptions": {
+        "number_of_replicas": "每个主分片的副本数量。增加副本数可以提高可用性和读取性能，但会占用更多存储空间。",
+        "refresh_interval": "索引的刷新间隔，决定了新写入的数据多久可以被搜索到。较短的间隔会增加实时性但可能影响写入性能。",
+        "max_result_window": "from + size 的最大值，用于分页查询。增大此值可能会占用更多内存。",
+        "blocks": {
+          "read_only": "设置索引为只读模式，禁止写入和元数据修改。",
+          "read_only_allow_delete": "设置索引为只读模式，但允许删除操作。通常在磁盘空间不足时自动启用。",
+          "read": "禁止对索引的读取操作。",
+          "write": "禁止对索引的写入操作，但允许元数据修改。"
+        },
+        "basic": "配置索引的基本参数，如副本数量、刷新间隔等"
+      },
+      "labels": {
+        "basic": "基本设置",
+        "access": "访问控制",
+        "replicas": "副本数量",
+        "refresh": "刷新间隔",
+        "window": "最大结果窗口",
+        "read_only": "只读模式",
+        "read_only_delete": "只读（允许删除）",
+        "read": "禁止读取",
+        "write": "禁止写入"
+      },
+      "actions": {
+        "save": "保存更改",
+        "refresh": "刷新"
+      },
+      "messages": {
+        "update_success": "设置已更新",
+        "update_basic_success": "基本设置已更新",
+        "update_access_success": "访问控制设置已更新",
+        "update_failed": "更新失败",
+        "try_again": "请稍后重试",
+        "fetch_failed": "获取设置失败"
+      }
+    },
+    "mappings": {
+      "field_types": {
+        "text": "文本",
+        "keyword": "关键字",
+        "long": "长整数",
+        "integer": "整数",
+        "short": "短整数",
+        "byte": "字节",
+        "double": "双精度",
+        "float": "单精度",
+        "boolean": "布尔值",
+        "date": "日期",
+        "object": "对象",
+        "nested": "嵌套"
+      },
+      "labels": {
+        "title": "索引映射",
+        "name": "字段名称",
+        "type": "字段类型",
+        "index": "可索引",
+        "store": "存储字段",
+        "analyzer": "分析器",
+        "search_analyzer": "搜索分析器",
+        "format": "格式",
+        "advanced": "高级设置",
+        "field_settings": "配置字段属性",
+        "delete_warning": "删除字段 \"{field}\" 可能会导致数据不一致。建议按照以下步骤操作：",
+        "migration_steps": {
+          "1": "先迁移或删除包含此字段的文档",
+          "2": "重建索引以应用新的映射"
+        },
+        "delete_confirm": "确定要删除此字段吗？"
+      },
+      "actions": {
+        "add": "添加字段",
+        "save": "保存更改",
+        "refresh": "刷新",
+        "edit": "编辑字段",
+        "delete": "删除字段",
+        "view_json": "查看 JSON",
+        "view_table": "表格视图",
+        "confirm": "确定",
+        "cancel": "取消"
+      },
+      "dialogs": {
+        "add": {
+          "title": "添加新字段",
+          "description": "配置新字段的属性"
+        },
+        "edit": {
+          "title": "编辑字段",
+          "description": "修改字段属性"
+        },
+        "delete": {
+          "title": "删除字段",
+          "description": "确定要删除这个字段吗？此操作无法撤销。",
+          "confirm": "删除",
+          "cancel": "取消"
+        }
+      },
+      "messages": {
+        "save_success": "映射已更新",
+        "save_description": "索引映射已成功更新",
+        "delete_success": "字段已删除",
+        "delete_description": "请记得保存更改以应用到索引",
+        "fetch_failed": "获取映射失败",
+        "update_failed": "更新映射失败",
+        "delete_failed": "删除字段失败",
+        "no_mappings": "没有找到字段映射"
       }
     }
   }

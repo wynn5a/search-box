@@ -82,17 +82,17 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
 
   const isSystemIndex = (indexName: string) => {
     return indexName.startsWith('.') || // 以点开头的索引
-           indexName.startsWith('_') || // 以下划线开头的索引
-           ['security', 'kibana', 'logstash'].some(prefix => 
-             indexName.startsWith(prefix + '_') || indexName.startsWith(prefix + '-')
-           )
+      indexName.startsWith('_') || // 以下划线开头的索引
+      ['security', 'kibana', 'logstash'].some(prefix =>
+        indexName.startsWith(prefix + '_') || indexName.startsWith(prefix + '-')
+      )
   }
 
   const filteredIndices = indices.filter(index => {
     const matchesSearch = index.index.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = indexType === 'all' ? true : 
-                       indexType === 'system' ? isSystemIndex(index.index) :
-                       !isSystemIndex(index.index)
+    const matchesType = indexType === 'all' ? true :
+      indexType === 'system' ? isSystemIndex(index.index) :
+        !isSystemIndex(index.index)
     return matchesSearch && matchesType
   })
 
@@ -199,8 +199,11 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
                 filteredIndices.map((index) => (
                   <TableRow
                     key={index.uuid}
-                    className="cursor-pointer"
-                    onClick={() => router.push(`/clusters/${clusterId}/indices/${index.index}`)}
+                    className={index.index.indexOf('.') !== -1 ? 'cursor-default' : 'cursor-pointer'}
+                    onClick={() => {
+                      if (index.index.indexOf('.') !== -1) return
+                      router.push(`/clusters/${clusterId}/indices/${index.index}`);
+                    }}
                   >
                     <TableCell className="text-center">
                       <TooltipProvider>

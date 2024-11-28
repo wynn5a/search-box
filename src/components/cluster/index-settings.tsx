@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { HelpCircle } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 interface IndexSettingsProps {
   clusterId: string
@@ -53,27 +54,27 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
   const [refreshing, setRefreshing] = useState(false)
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations("index")
 
   const fetchSettings = async () => {
     try {
       setRefreshing(true)
       const response = await fetch(`/api/clusters/${clusterId}/indices/${indexName}/settings`)
       const data = await response.json()
-      console.log("----", data)
       if (!data.success) {
         toast({
-          title: "获取索引设置失败",
-          description: "请稍后重试",
+          title: t("settings.messages.fetch_failed"),
+          description: t("settings.messages.try_again"),
           variant: "destructive",
         })
         return
       }
-      // 从响应中提取设置
-      const indexSettings = data.data?.index || {}
+      const indexSettings = data.data?.settings?.index || {}
+      const defaultSettings = data.data?.defaults?.index||{}
       const settings = {
-        number_of_replicas: parseInt(indexSettings.number_of_replicas),
-        refresh_interval: indexSettings.refresh_interval,
-        max_result_window: parseInt(indexSettings.max_result_window),
+        number_of_replicas: indexSettings.number_of_replicas? parseInt(indexSettings.number_of_replicas): 0,
+        refresh_interval: defaultSettings.refresh_interval? defaultSettings.refresh_interval: '1s',
+        max_result_window: defaultSettings.max_result_window? parseInt(defaultSettings.max_result_window): 0,
         blocks: {
           read_only: indexSettings.blocks?.read_only === 'true',
           read_only_allow_delete: indexSettings.blocks?.read_only_allow_delete === 'true',
@@ -81,14 +82,14 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
           write: indexSettings.blocks?.write === 'true'
         }
       }
-      
+
       setSettings(settings)
       setLocalSettings(settings)
     } catch (error) {
       console.error("Error fetching settings:", error)
       toast({
-        title: "获取索引设置失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("settings.messages.fetch_failed"),
+        description: error instanceof Error ? error.message : t("settings.messages.try_again"),
         variant: "destructive",
       })
     } finally {
@@ -130,7 +131,7 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "更新索引设置失败")
+        throw new Error(data.error || t("settings.messages.update_failed"))
       }
 
       // 只有成功时才更新settings
@@ -142,17 +143,17 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
       }))
 
       toast({
-        title: "更新成功",
-        description: "索引基本设置已更新",
+        title: t("settings.messages.update_success"),
+        description: t("settings.messages.update_basic_success"),
       })
     } catch (error) {
       // 更新失败时恢复本地状态
-      setLocalSettings(prev => ({...settings}))
-      
+      setLocalSettings(prev => ({ ...settings }))
+
       console.error("Error updating settings:", error)
       toast({
-        title: "更新失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("settings.messages.update_failed"),
+        description: error instanceof Error ? error.message : t("settings.messages.try_again"),
         variant: "destructive",
       })
     } finally {
@@ -161,9 +162,9 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
   }
 
   const updateBlockSettings = async (newBlocks: Partial<IndexSettings['blocks']>) => {
-    const originalSettings = {...settings}
-    const originalLocalSettings = {...localSettings}
-    
+    const originalSettings = { ...settings }
+    const originalLocalSettings = { ...localSettings }
+
     try {
       setSaving(true)
       // 先乐观更新UI
@@ -171,12 +172,12 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
         ...settings?.blocks,
         ...newBlocks
       }
-      
+
       setSettings(prev => ({
         ...prev,
         blocks: updatedBlocks
       }))
-      
+
       setLocalSettings(prev => ({
         ...prev,
         blocks: updatedBlocks
@@ -197,12 +198,12 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "更新访问控制设置失败")
+        throw new Error(data.error || t("settings.messages.update_failed"))
       }
 
       toast({
-        title: "更新成功",
-        description: "访问控制设置已更新",
+        title: t("settings.messages.update_success"),
+        description: t("settings.messages.update_access_success"),
       })
     } catch (error) {
       // 更新失败时恢复到原始状态
@@ -211,8 +212,8 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
 
       console.error("Error updating block settings:", error)
       toast({
-        title: "更新失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("settings.messages.update_failed"),
+        description: error instanceof Error ? error.message : t("settings.messages.try_again"),
         variant: "destructive",
       })
     } finally {
@@ -237,240 +238,180 @@ export function IndexSettings({ clusterId, indexName }: IndexSettingsProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">索引设置</h3>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchSettings}
-            disabled={refreshing}
-            loading={refreshing}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            刷新
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 基本设置 */}
-        <Card className="p-6">
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 justify-between">
-              <div className="flex justify-left space-x-2">
-                <h4 className="text-lg font-medium">基本设置</h4>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="w-[300px] text-sm">配置索引的基本参数，如副本数量、刷新间隔等</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex justify-end pt-4">
-                <Button
-                  onClick={saveBasicSettings}
-                  disabled={saving}
-                  loading={saving}
-                  variant={"outline"}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  保存设置
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="replicas">副本分片数量</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[300px] text-sm">{SETTINGS_DESCRIPTIONS.number_of_replicas}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Input
-                    id="replicas"
-                    type="number"
-                    min="0"
-                    value={localSettings?.number_of_replicas ?? 0}
-                    onChange={(e) => handleInputChange('number_of_replicas', parseInt(e.target.value))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="refresh">刷新间隔</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[300px] text-sm">{SETTINGS_DESCRIPTIONS.refresh_interval}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Input
-                    id="refresh"
-                    value={localSettings?.refresh_interval ?? "1s"}
-                    onChange={(e) => handleInputChange('refresh_interval', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="window">最大结果窗口</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[300px] text-sm">{SETTINGS_DESCRIPTIONS.max_result_window}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Input
-                    id="window"
-                    type="number"
-                    min="1"
-                    value={localSettings?.max_result_window ?? 10000}
-                    onChange={(e) => handleInputChange('max_result_window', parseInt(e.target.value))}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* 访问控制 */}
-        <Card className="p-6">
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <h4 className="text-lg font-medium">访问控制</h4>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+      {/* 基本设置 */}
+      <Card className="p-6">
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex justify-left space-x-2">
+              <h4 className="text-lg font-medium">{t("settings.labels.basic")}</h4>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="w-[300px] text-sm">管理索引的读写权限和访问限制</p>
+                    <p className="w-[300px] text-sm">{t("settings.descriptions.basic")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Label>只读模式</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[300px] text-sm">{SETTINGS_DESCRIPTIONS.blocks.read_only}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <p className="text-sm text-muted-foreground">禁止所有写入操作</p>
-                </div>
-                <Switch
-                  checked={settings?.blocks?.read_only ?? false}
-                  onCheckedChange={(checked) => updateBlockSettings({ read_only: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Label>允许删除的只读模式</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[300px] text-sm">{SETTINGS_DESCRIPTIONS.blocks.read_only_allow_delete}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <p className="text-sm text-muted-foreground">允许删除操作的只读模式</p>
-                </div>
-                <Switch
-                  checked={settings?.blocks?.read_only_allow_delete ?? false}
-                  onCheckedChange={(checked) => updateBlockSettings({ read_only_allow_delete: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Label>禁止读取</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[300px] text-sm">{SETTINGS_DESCRIPTIONS.blocks.read}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <p className="text-sm text-muted-foreground">禁止所有读取操作</p>
-                </div>
-                <Switch
-                  checked={settings?.blocks?.read ?? false}
-                  onCheckedChange={(checked) => updateBlockSettings({ read: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Label>禁止写入</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[300px] text-sm">{SETTINGS_DESCRIPTIONS.blocks.write}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <p className="text-sm text-muted-foreground">禁止所有写入操作</p>
-                </div>
-                <Switch
-                  checked={settings?.blocks?.write ?? false}
-                  onCheckedChange={(checked) => updateBlockSettings({ write: checked })}
-                />
-              </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={saveBasicSettings}
+                disabled={saving}
+                loading={saving}
+                variant={"outline"}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {t("settings.actions.save")}
+              </Button>
             </div>
           </div>
-        </Card>
-      </div>
+
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="replicas">{t("settings.labels.replicas")}</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="w-[300px] text-sm">{t("settings.descriptions.number_of_replicas")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Input
+                id="replicas"
+                type="number"
+                min="0"
+                value={localSettings?.number_of_replicas ?? 0}
+                onChange={(e) => handleInputChange('number_of_replicas', parseInt(e.target.value))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="refresh">{t("settings.labels.refresh")}</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="w-[300px] text-sm">{t("settings.descriptions.refresh_interval")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Input
+                id="refresh"
+                value={localSettings?.refresh_interval ?? "1s"}
+                onChange={(e) => handleInputChange('refresh_interval', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="window">{t("settings.labels.window")}</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="w-[300px] text-sm">{t("settings.descriptions.max_result_window")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Input
+                id="window"
+                type="number"
+                min="1"
+                value={localSettings?.max_result_window ?? 10000}
+                onChange={(e) => handleInputChange('max_result_window', parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 访问控制 */}
+      <Card className="p-6">
+        <div className="space-y-6">
+          <div className="flex items-center gap-2">
+            <h4 className="text-lg font-medium">{t("settings.labels.access")}</h4>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="w-[300px] text-sm">{t("settings.descriptions.blocks.read_only")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>{t("settings.labels.read_only")}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.descriptions.blocks.read_only")}
+                </p>
+              </div>
+              <Switch
+                checked={settings?.blocks?.read_only ?? false}
+                onCheckedChange={(checked) => updateBlockSettings({ read_only: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>{t("settings.labels.read_only_delete")}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.descriptions.blocks.read_only_allow_delete")}
+                </p>
+              </div>
+              <Switch
+                checked={settings?.blocks?.read_only_allow_delete ?? false}
+                onCheckedChange={(checked) => updateBlockSettings({ read_only_allow_delete: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>{t("settings.labels.read")}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.descriptions.blocks.read")}
+                </p>
+              </div>
+              <Switch
+                checked={settings?.blocks?.read ?? false}
+                onCheckedChange={(checked) => updateBlockSettings({ read: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>{t("settings.labels.write")}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.descriptions.blocks.write")}
+                </p>
+              </div>
+              <Switch
+                checked={settings?.blocks?.write ?? false}
+                onCheckedChange={(checked) => updateBlockSettings({ write: checked })}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   )
 }

@@ -3,7 +3,7 @@
 <div align="center">
   <p>A powerful and modern web interface for managing multiple OpenSearch clusters</p>
   
-  [![License: MIT](https://img.shields.io/badge/License-GUN%20GPL%20v3-green.svg)](https://opensource.org/license/gpl-3-0)
+  [![License: MIT](https://img.shields.io/badge/License-GNU%20GPL%20v3-green.svg)](https://opensource.org/license/gpl-3-0)
   [![Next.js](https://img.shields.io/badge/Next.js-13+-black)](https://nextjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0+-38B2AC)](https://tailwindcss.com/)
