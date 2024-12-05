@@ -26,16 +26,17 @@ import {
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslations } from "next-intl"
 
-const indexFormSchema = z.object({
+const createIndexFormSchema = (t: any) => z.object({
   name: z.string()
-    .min(1, "索引名称不能为空")
-    .regex(/^[a-z0-9-_]+$/, "索引名称只能包含小写字母、数字、横线和下划线"),
-  shards: z.coerce.number().min(1, "主分片数量至少为1"),
-  replicas: z.coerce.number().min(0, "副本分片数量不能小于0"),
+    .min(1, t('clusters.list.indices.create_index.validation.name_required'))
+    .regex(/^[a-z0-9-_]+$/, t('clusters.list.indices.create_index.validation.name_format')),
+  shards: z.coerce.number().min(1, t('clusters.list.indices.create_index.validation.shards_min')),
+  replicas: z.coerce.number().min(0, t('clusters.list.indices.create_index.validation.replicas_min')),
 })
 
-type IndexFormValues = z.infer<typeof indexFormSchema>
+type IndexFormValues = z.infer<ReturnType<typeof createIndexFormSchema>>
 
 interface CreateIndexDialogProps {
   clusterId: string
@@ -46,9 +47,10 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations()
   
   const form = useForm<IndexFormValues>({
-    resolver: zodResolver(indexFormSchema),
+    resolver: zodResolver(createIndexFormSchema(t)),
     defaultValues: {
       name: "",
       shards: 1,
@@ -80,12 +82,12 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.message || "创建索引失败")
+        throw new Error(result.message || t('clusters.list.indices.create_index.toast.error_description'))
       }
 
       toast({
-        title: "索引已创建",
-        description: `索引 "${data.name}" 已成功创建`,
+        title: t('clusters.list.indices.create_index.toast.success_title'),
+        description: t('clusters.list.indices.create_index.toast.success_description', { name: data.name }),
       })
 
       setOpen(false)
@@ -96,8 +98,8 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
     } catch (error) {
       console.error("Error creating index:", error)
       toast({
-        title: "创建索引失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t('clusters.list.indices.create_index.toast.error_title'),
+        description: error instanceof Error ? error.message : t('clusters.list.indices.create_index.toast.error_description'),
         variant: "destructive",
       })
     } finally {
@@ -117,14 +119,14 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
       <DialogTrigger asChild>
         <Button className="gap-2" variant={"outline"}>
           <PlusCircle className="h-4 w-4" />
-          创建索引
+          {t('clusters.list.indices.create_index.button')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>创建新索引</DialogTitle>
+          <DialogTitle>{t('clusters.list.indices.create_index.title')}</DialogTitle>
           <DialogDescription>
-            创建一个新的索引并配置其基本设置
+            {t('clusters.list.indices.create_index.description')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -134,12 +136,12 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>索引名称</FormLabel>
+                  <FormLabel>{t('clusters.list.indices.create_index.name.label')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="my-index" {...field} />
+                    <Input placeholder={t('clusters.list.indices.create_index.name.placeholder')} {...field} />
                   </FormControl>
                   <FormDescription>
-                    索引名称必须是小写，可以包含数字、横线和下划线
+                    {t('clusters.list.indices.create_index.name.description')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -150,12 +152,12 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
               name="shards"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>主分片数量</FormLabel>
+                  <FormLabel>{t('clusters.list.indices.create_index.shards.label')}</FormLabel>
                   <FormControl>
                     <Input type="number" min="1" {...field} />
                   </FormControl>
                   <FormDescription>
-                    主分片数量在创建后不能修改，单节点建议设置为1
+                    {t('clusters.list.indices.create_index.shards.description')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -166,20 +168,20 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
               name="replicas"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>副本分片数量</FormLabel>
+                  <FormLabel>{t('clusters.list.indices.create_index.replicas.label')}</FormLabel>
                   <FormControl>
                     <Input type="number" min="0" {...field} />
                   </FormControl>
                   <FormDescription>
-                    副本分片数量可以随时调整，单节点建议设置为0
+                    {t('clusters.list.indices.create_index.replicas.description')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={loading} loading={loading}>
-                {loading ? "创建中..." : "创建索引"}
+              <Button type="submit" disabled={loading}>
+                {loading ? t('clusters.list.indices.create_index.creating') : t('clusters.list.indices.create_index.create')}
               </Button>
             </DialogFooter>
           </form>
@@ -187,4 +189,4 @@ export function CreateIndexDialog({ clusterId, onCreated }: CreateIndexDialogPro
       </DialogContent>
     </Dialog>
   )
-} 
+}

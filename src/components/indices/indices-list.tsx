@@ -38,6 +38,7 @@ import {
 import { Loader2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
+import { useTranslations } from 'next-intl'
 
 interface IndexStats {
   health: string
@@ -60,6 +61,7 @@ const DeleteButton = ({
   onDelete: () => Promise<void>
 }) => {
   const [isDeleting, setIsDeleting] = useState(false)
+  const t = useTranslations('clusters.list.indices')
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -80,15 +82,13 @@ const DeleteButton = ({
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确定要删除这个索引吗？</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            你即将删除索引 <span className="font-medium text-foreground">{index}</span>
-            <br />
-            此操作不可恢复，索引中的所有数据都将永久删除。
-          </AlertDialogDescription>
+          <AlertDialogTitle>{t('delete.title')}</AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2" dangerouslySetInnerHTML={{
+            __html: t('delete.description', { indexName: index })
+          }} />
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogCancel>{t('delete.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
@@ -97,10 +97,10 @@ const DeleteButton = ({
             {isDeleting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                删除中...
+                {t('delete.deleting')}
               </>
             ) : (
-              "确认删除"
+              t('delete.confirm')
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -116,6 +116,7 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
   const [showHiddenIndices, setShowHiddenIndices] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations('clusters.list.indices')
 
   const fetchIndices = async () => {
     try {
@@ -130,8 +131,8 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
       }
     } catch (error) {
       toast({
-        title: "获取索引列表失败",
-        description: "请稍后重试",
+        title: t('fetch.error'),
+        description: t('fetch.error_description'),
         variant: "destructive",
       })
       setIndices([])
@@ -166,14 +167,14 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
       if (!response.ok) throw new Error("Failed to delete index")
 
       toast({
-        title: "索引已删除",
-        description: `索引 "${indexName}" 已成功删除`,
+        title: t('delete.success'),
+        description: t('delete.success_description', { index: indexName }),
       })
       fetchIndices()
     } catch (error) {
       toast({
-        title: "删除索引失败",
-        description: "请稍后重试",
+        title: t('delete.error'),
+        description: t('delete.error_description'),
         variant: "destructive",
       })
     }
@@ -188,14 +189,17 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
       if (!response.ok) throw new Error(`Failed to ${isOpen ? "close" : "open"} index`)
 
       toast({
-        title: `索引已${isOpen ? "关闭" : "打开"}`,
-        description: `索引 "${indexName}" 已${isOpen ? "关闭" : "打开"}`,
+        title: t(isOpen ? 'toggle.close_success' : 'toggle.open_success'),
+        description: t(
+          isOpen ? 'toggle.close_success_description' : 'toggle.open_success_description',
+          { index: indexName }
+        ),
       })
       fetchIndices()
     } catch (error) {
       toast({
-        title: `${isOpen ? "关闭" : "打开"}索引失败`,
-        description: "请稍后重试",
+        title: t(isOpen ? 'toggle.close_error' : 'toggle.open_error'),
+        description: t(isOpen ? 'toggle.close_error_description' : 'toggle.open_error_description'),
         variant: "destructive",
       })
     }
@@ -210,25 +214,25 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">索引列表</h2>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
           <Button variant="outline" size="sm" disabled>
             <RefreshCw className="h-4 w-4 mr-2" />
-            刷新
+            {t('refresh')}
           </Button>
         </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>状态</TableHead>
-                <TableHead>索引名称</TableHead>
-                <TableHead className="text-center">主分片</TableHead>
-                <TableHead className="text-center">副本分片</TableHead>
-                <TableHead className="text-center">文档数</TableHead>
-                <TableHead className="text-center">已删除</TableHead>
-                <TableHead className="text-center">存储大小</TableHead>
-                <TableHead className="text-center">主分片大小</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('status')}</TableHead>
+                <TableHead>{t('name')}</TableHead>
+                <TableHead className="text-center">{t('primary_shards')}</TableHead>
+                <TableHead className="text-center">{t('replica_shards')}</TableHead>
+                <TableHead className="text-center">{t('doc_count')}</TableHead>
+                <TableHead className="text-center">{t('deleted_docs')}</TableHead>
+                <TableHead className="text-center">{t('store_size')}</TableHead>
+                <TableHead className="text-center">{t('primary_store_size')}</TableHead>
+                <TableHead>{t('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -261,7 +265,7 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
             checked={showHiddenIndices}
             onCheckedChange={setShowHiddenIndices}
           />
-          <Label htmlFor="show-hidden">显示系统索引</Label>
+          <Label htmlFor="show-hidden">{t('show_system')}</Label>
         </div>
         <div className="flex space-x-2">
           <CreateIndexDialog clusterId={clusterId} onCreated={fetchIndices} />
@@ -277,29 +281,28 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
             )} />
           </Button>
         </div>
-
       </div>
 
       <ScrollArea className="h-[500px] rounded-md border">
         <Table className="text-center">
           <TableHeader>
             <TableRow>
-              <TableHead className="text-center">状态</TableHead>
-              <TableHead>索引名称</TableHead>
-              <TableHead className="text-center">主分片</TableHead>
-              <TableHead className="text-center">副本分片</TableHead>
-              <TableHead className="text-center">文档数</TableHead>
-              <TableHead className="text-center">已删除</TableHead>
-              <TableHead className="text-center">存储大小</TableHead>
-              <TableHead className="text-center">主分片大小</TableHead>
-              <TableHead>操作</TableHead>
+              <TableHead className="text-center">{t('status')}</TableHead>
+              <TableHead>{t('name')}</TableHead>
+              <TableHead className="text-center">{t('primary_shards')}</TableHead>
+              <TableHead className="text-center">{t('replica_shards')}</TableHead>
+              <TableHead className="text-center">{t('doc_count')}</TableHead>
+              <TableHead className="text-center">{t('deleted_docs')}</TableHead>
+              <TableHead className="text-center">{t('store_size')}</TableHead>
+              <TableHead className="text-center">{t('primary_store_size')}</TableHead>
+              <TableHead>{t('actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredIndices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="h-24 text-center">
-                  没有找到索引
+                  {t('no_indices')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -342,10 +345,10 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
                       )}
                       <span>{index.index}</span>
                       {index.status === 'close' && (
-                        <Badge variant="secondary">已关闭</Badge>
+                        <Badge variant="secondary">{t('badge.closed')}</Badge>
                       )}
                       {index.status === 'open' && (
-                        <Badge variant="secondary">已开启</Badge>
+                        <Badge variant="secondary">{t('badge.open')}</Badge>
                       )}
                     </div>
                   </TableCell>

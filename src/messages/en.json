@@ -366,6 +366,8 @@
     "title": "Clusters",
     "description": "Manage your OpenSearch clusters",
     "indices": "Indices",
+    "indices_management": "Indices Management",
+    "indices_list": "Indices List",
     "storage": "Storage",
     "version": "Version",
     "nodes": "Nodes",
@@ -414,6 +416,98 @@
         "error": "Connection Failed",
         "error_description": "Unable to connect to the cluster, please check the configuration",
         "timeout": "Connection timeout, please check your network or cluster address"
+      },
+      "stats": {
+        "total_indices": "Total Indices",
+        "user_indices": "User Indices",
+        "system_indices": "System Indices",
+        "total_docs": "Total Documents",
+        "total_count": "Total: {count} documents",
+        "storage_size": "Storage Size",
+        "storage_description": "Total storage space used by all indices",
+        "health_status": "Health Status",
+        "health_description": "{yellow} warnings / {red} errors",
+        "error": {
+          "title": "Failed to get statistics",
+          "fetch_failed": "Failed to fetch cluster statistics",
+          "unknown": "Unknown error"
+        }
+      },
+      "indices": {
+        "title": "Indices List",
+        "refresh": "Refresh",
+        "show_system": "Show System Indices",
+        "status": "Status",
+        "name": "Index Name",
+        "primary_shards": "Primary Shards",
+        "replica_shards": "Replica Shards",
+        "doc_count": "Documents",
+        "deleted_docs": "Deleted",
+        "store_size": "Store Size",
+        "primary_store_size": "Primary Store Size",
+        "actions": "Actions",
+        "no_indices": "No indices found",
+        "badge": {
+          "closed": "Closed",
+          "open": "Open"
+        },
+        "delete": {
+          "title": "Delete Index",
+          "description": "You are about to delete index {indexName}. This action cannot be undone, and all data in the index will be permanently deleted.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "deleting": "Deleting...",
+          "success": "Index Deleted",
+          "success_description": "Index \"{index}\" has been successfully deleted",
+          "error": "Failed to Delete Index",
+          "error_description": "Please try again later"
+        },
+        "fetch": {
+          "error": "Failed to Fetch Indices",
+          "error_description": "Please try again later"
+        },
+        "toggle": {
+          "open_success": "Index Opened",
+          "open_success_description": "Index \"{index}\" has been opened",
+          "open_error": "Failed to Open Index",
+          "open_error_description": "Please try again later",
+          "close_success": "Index Closed",
+          "close_success_description": "Index \"{index}\" has been closed",
+          "close_error": "Failed to Close Index",
+          "close_error_description": "Please try again later"
+        },
+        "create_index": {
+          "button": "Create Index",
+          "title": "Create New Index",
+          "description": "Create a new index and configure its basic settings",
+          "name": {
+            "label": "Index Name",
+            "placeholder": "my-index",
+            "description": "Index name must be lowercase and can contain numbers, hyphens, and underscores"
+          },
+          "shards": {
+            "label": "Primary Shards",
+            "description": "Number of primary shards cannot be changed after creation. For single node, it's recommended to set it to 1"
+          },
+          "replicas": {
+            "label": "Replica Shards",
+            "description": "Number of replica shards can be adjusted anytime. For single node, it's recommended to set it to 0"
+          },
+          "validation": {
+            "name_required": "Index name cannot be empty",
+            "name_format": "Index name can only contain lowercase letters, numbers, hyphens, and underscores",
+            "shards_min": "Number of primary shards must be at least 1",
+            "replicas_min": "Number of replica shards cannot be less than 0"
+          },
+          "creating": "Creating...",
+          "create": "Create Index",
+          "toast": {
+            "success_title": "Index Created",
+            "success_description": "Index \"{name}\" has been successfully created",
+            "error_title": "Failed to Create Index",
+            "error_description": "Please try again later"
+          }
+        }
       }
     }
   },

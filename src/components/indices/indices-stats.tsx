@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Database, HardDrive, Files, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTranslations } from 'next-intl'
 
 interface IndexStats {
   health: string
@@ -49,17 +50,17 @@ function StatsCard({ title, value, description, icon, loading }: StatsCardProps)
 
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex items-start space-x-4">
+      <CardContent className="px-6 py-4">
+        <div className="flex items-center space-x-6">
           <div className="p-2 bg-primary/10 rounded-full shrink-0">
             {icon}
           </div>
-          <div className="space-y-1 min-w-0">
+          <div className="space-y-1 min-w-0 pl-2">
             <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-xl font-bold truncate">{value}</p>
-            <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
+        <p className="text-sm text-muted-foreground pt-2 ml-2">{description}</p>
       </CardContent>
     </Card>
   )
@@ -71,6 +72,7 @@ export function IndicesStats({ clusterId }: { clusterId: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const t = useTranslations('clusters')
 
   const formatNumber = useCallback((value: number) => {
     if (!value && value !== 0) return { mainValue: "0", fullValue: "0" }
@@ -138,17 +140,17 @@ export function IndicesStats({ clusterId }: { clusterId: string }) {
         setTotalDocs(docsData.data[0].count)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "未知错误"
+      const message = err instanceof Error ? err.message : t('list.test.error')
       setError(message)
       toast({
-        title: "获取集群统计信息失败",
-        description: message,
+        title: t('list.test.error'),
+        description: t('list.test.error_description'),
         variant: "destructive",
       })
     } finally {
       setLoading(false)
     }
-  }, [clusterId, toast])
+  }, [clusterId, toast, t])
 
   useEffect(() => {
     setLoading(true)
@@ -171,7 +173,7 @@ export function IndicesStats({ clusterId }: { clusterId: string }) {
   if (error) {
     return (
       <div className="p-4 bg-destructive/10 text-destructive rounded-md">
-        <p className="font-medium">获取统计信息失败</p>
+        <p className="font-medium">{t('list.test.error')}</p>
         <p className="text-sm mt-1">{error}</p>
       </div>
     )
@@ -180,30 +182,33 @@ export function IndicesStats({ clusterId }: { clusterId: string }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatsCard
-        title="索引总数"
+        title={t('list.stats.total_indices')}
         value={stats.totalIndices.toString()}
-        description={`用户索引: ${stats.userIndices} / 系统索引: ${stats.systemIndices}`}
+        description={`${t('list.stats.user_indices')}: ${stats.userIndices} / ${t('list.stats.system_indices')}: ${stats.systemIndices}`}
         icon={<Database className="h-4 w-4 text-primary" />}
         loading={loading}
       />
       <StatsCard
-        title="文档总数"
+        title={t('list.stats.total_docs')}
         value={formatNumber(stats.totalDocs).mainValue}
-        description={`总计: ${formatNumber(stats.totalDocs).fullValue} 条`}
+        description={t('list.stats.total_count', { count: formatNumber(stats.totalDocs).fullValue })}
         icon={<Files className="h-4 w-4 text-primary" />}
         loading={loading}
       />
       <StatsCard
-        title="存储大小"
+        title={t('list.stats.storage_size')}
         value={formatSize(stats.totalSize.toString())}
-        description="所有索引占用的存储空间"
+        description={t('list.stats.storage_description')}
         icon={<HardDrive className="h-4 w-4 text-primary" />}
         loading={loading}
       />
       <StatsCard
-        title="索引健康状态"
+        title={t('list.stats.health_status')}
         value={`${stats.healthStatus.green}/${stats.totalIndices}`}
-        description={`${stats.healthStatus.yellow} 个警告 / ${stats.healthStatus.red} 个异常`}
+        description={t('list.stats.health_description', { 
+          yellow: stats.healthStatus.yellow,
+          red: stats.healthStatus.red
+        })}
         icon={<AlertCircle className="h-4 w-4 text-primary" />}
         loading={loading}
       />
