@@ -32,6 +32,15 @@
     },
     "value": {
       "empty": "-"
+    },
+    "select":{
+      "placeholder": "Select...",
+      "all":{
+        "star": "All Indexes (*)",
+        "all": "All Indexes (_all)"
+      },
+      "userIndices": "User Indices",
+      "systemIndices": "System Indices"
     }
   },
   "home": {
@@ -507,6 +516,114 @@
             "error_title": "Failed to Create Index",
             "error_description": "Please try again later"
           }
+        }
+      }
+    },
+    "query": {
+      "title": "Query",
+      "workspace": {
+        "method": {
+          "title": "Method"
+        },
+        "execute": "Execute",
+        "path_placeholder": "Path (e.g., /_cat/indices)",
+        "index_required": "Index Required",
+        "select_index": "Please select an index from the dropdown",
+        "json_error": "JSON Format Error",
+        "check_json": "Please check if the request body is in correct JSON format",
+        "template": {
+          "saved": "Template Saved",
+          "save_success": "Query template has been saved successfully",
+          "save_error": "Failed to save template",
+          "deleted": "Template Deleted",
+          "delete_success": "Query template has been deleted",
+          "delete_error": "Failed to delete template",
+          "load_error": "Failed to load custom templates",
+          "generated": "Generated Successfully",
+          "generate_success": "Successfully generated {type} template",
+          "generate_error": "Failed to generate {type} template. Please make sure the index exists and has mappings",
+          "generating": "Generating...",
+          "generate": "Generate {type} Template",
+          "bulk": "Bulk",
+          "document": "Document"
+        }
+      },
+      "results": {
+        "execution_time": "Execution time: {seconds}s",
+        "view": {
+          "table": "Table View",
+          "json": "JSON View"
+        },
+        "empty": {
+          "title": "No results found",
+          "description": "Run a query to see the results here"
+        },
+        "table": {
+          "previous": "Previous",
+          "next": "Next",
+          "columns": "Columns",
+          "no_results": "No results"
+        }
+      },
+      "template_manager": {
+        "search": {
+          "placeholder": "Search templates..."
+        },
+        "category": {
+          "all": "All Categories",
+          "custom": "Custom"
+        },
+        "tabs": {
+          "default": "Default Templates",
+          "custom": "Custom Templates"
+        },
+        "save": {
+          "button": "Save Current Query",
+          "title": "Save Query Template",
+          "description": {
+            "text": "Save your current query as a template for future use"
+          },
+          "name": {
+            "label": "Template Name",
+            "placeholder": "Enter template name"
+          },
+          "template_description": {
+            "label": "Description",
+            "placeholder": "Enter template description"
+          },
+          "category": {
+            "label": "Category"
+          },
+          "submit": "Save Template",
+          "success": {
+            "title": "Template saved",
+            "description": "Query template has been saved successfully"
+          },
+          "error": {
+            "title": "Error",
+            "description": "Failed to save template"
+          }
+        },
+        "delete": {
+          "title": "Delete Template",
+          "description": {
+            "text": "Are you sure you want to delete this template? This action cannot be undone."
+          },
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": {
+            "title": "Template deleted",
+            "description": "Query template has been deleted successfully"
+          },
+          "error": {
+            "title": "Error",
+            "description": "Failed to delete template"
+          }
+        },
+        "empty": {
+          "filtered": "No templates match your search",
+          "custom": "No custom templates found",
+          "default": "No default templates found"
         }
       }
     }

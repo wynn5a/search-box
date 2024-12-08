@@ -28,6 +28,7 @@ import {
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
+import { useTranslations } from "next-intl"
 
 interface TableViewProps {
   columns: ColumnDef<Record<string, unknown>, any>[]
@@ -38,6 +39,7 @@ export function TableView({ columns, data }: TableViewProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
+  const t = useTranslations()
 
   const table = useReactTable({
     data,
@@ -76,7 +78,7 @@ export function TableView({ columns, data }: TableViewProps) {
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-           <ChevronLeft /> Previous
+           <ChevronLeft /> {t("clusters.query.results.table.previous")}
           </Button>
           <Button
             variant="outline"
@@ -84,13 +86,13 @@ export function TableView({ columns, data }: TableViewProps) {
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next <ChevronRight />
+            {t("clusters.query.results.table.next")} <ChevronRight />
           </Button>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
-              Columns <ChevronDown />
+              {t("clusters.query.results.table.columns")} <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px]">
@@ -160,7 +162,7 @@ export function TableView({ columns, data }: TableViewProps) {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      No results.
+                      {t("clusters.query.results.table.no_results")}
                     </TableCell>
                   </TableRow>
                 )}

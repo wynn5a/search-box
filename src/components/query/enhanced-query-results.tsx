@@ -5,6 +5,7 @@ import { JsonView } from "./components/json-view"
 import { TableView } from "./components/table-view"
 import { extractTableData, isTableData, transformToTableData } from "./utils/table-utils"
 import { formatJsonString } from "./utils/json-utils"
+import { useTranslations } from "next-intl"
 
 interface EnhancedQueryResultsProps {
   results: unknown
@@ -12,8 +13,10 @@ interface EnhancedQueryResultsProps {
 }
 
 export function EnhancedQueryResults({ results, executionTime }: EnhancedQueryResultsProps): JSX.Element {
-   // Determine if we can show table view
-   const showTable = useMemo(() => {
+  const t = useTranslations()
+
+  // Determine if we can show table view
+  const showTable = useMemo(() => {
     if (!results) return false
     const data = extractTableData(results)
     return isTableData(data)
@@ -44,7 +47,7 @@ export function EnhancedQueryResults({ results, executionTime }: EnhancedQueryRe
   // Format execution time to seconds with 2 decimal places
   const formatExecutionTime = (ms: number | null): string => {
     if (ms === null) return ''
-    return `Execution time: ${(ms / 1000).toFixed(2)}s`
+    return t("clusters.query.results.execution_time", { seconds: (ms / 1000).toFixed(2) })
   }
 
   return (
@@ -54,8 +57,8 @@ export function EnhancedQueryResults({ results, executionTime }: EnhancedQueryRe
           {formatExecutionTime(executionTime)}
         </div>
         <TabsList>
-          {showTable && <TabsTrigger value="table">Table View</TabsTrigger>}
-          <TabsTrigger value="json">JSON View</TabsTrigger>
+          {showTable && <TabsTrigger value="table">{t("clusters.query.results.view.table")}</TabsTrigger>}
+          <TabsTrigger value="json">{t("clusters.query.results.view.json")}</TabsTrigger>
         </TabsList>
       </div>
 

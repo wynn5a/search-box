@@ -17,6 +17,7 @@ import { type QueryTemplate } from "@/config/default-templates"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { TemplateGeneratorButton } from "./template-generator-button"
 import { useOpenSearchClient } from "@/hooks/use-opensearch-client"
+import { useTranslations } from "next-intl"
 
 interface QueryWorkspaceProps {
   clusterId: string
@@ -32,6 +33,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
   const isDragging = useRef(false)
   const { toast } = useToast()
   const { theme } = useTheme()
+  const t = useTranslations()
   
   // 使用自定义 hooks
   const { indices, refresh } = useIndices(clusterId)
@@ -41,17 +43,23 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
   const client = useOpenSearchClient(clusterId)
 
   // 处理编辑器拖拽调整大小
-  const handleMouseDown = () => {
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
     isDragging.current = true
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
-  }
+  }, [])
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging.current) return
-    const newHeight = Math.max(100, Math.min(600, editorHeight + e.movementY))
+
+    const container = document.querySelector('.editor-container')
+    if (!container) return
+
+    const containerRect = container.getBoundingClientRect()
+    const newHeight = Math.max(100, Math.min(400, e.clientY - containerRect.top))
     setEditorHeight(newHeight)
-  }, [editorHeight])
+  }, [])
 
   const handleMouseUp = useCallback(() => {
     isDragging.current = false
@@ -77,15 +85,15 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
       } catch (error) {
         console.error("Error fetching templates:", error)
         toast({
-          title: "Error",
-          description: "Failed to load custom templates",
+          title: t("common.error.unknown"),
+          description: t("clusters.query.workspace.template.load_error"),
           variant: "destructive",
         })
       }
     }
 
     fetchTemplates()
-  }, [clusterId, toast])
+  }, [clusterId, toast, t])
 
   // 处理模板选择
   const handleTemplateSelect = (template: QueryTemplate) => {
@@ -100,8 +108,8 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
     // 检查路径中是否包含 {index} 并验证索引选择
     if (path.includes("{index}") && (selectedIndex === "__placeholder__" || !selectedIndex)) {
       toast({
-        title: "需要选择索引",
-        description: "请从下拉列表中选择一个索引",
+        title: t("clusters.query.workspace.index_required"),
+        description: t("clusters.query.workspace.select_index"),
         variant: "destructive",
       })
       return
@@ -114,8 +122,8 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
         parsedBody = queryBody && queryBody.trim() !== '' ? JSON.parse(queryBody) : undefined
       } catch (e) {
         toast({
-          title: "JSON 格式错误",
-          description: e instanceof Error ? e.message : "请检查请求体的 JSON 格式是否正确",
+          title: t("clusters.query.workspace.json_error"),
+          description: e instanceof Error ? e.message : t("clusters.query.workspace.check_json"),
           variant: "destructive",
         })
         return
@@ -156,14 +164,14 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                 const savedTemplate = await response.json()
                 setCustomTemplates([...customTemplates, savedTemplate])
                 toast({
-                  title: "Template saved",
-                  description: "Query template has been saved successfully",
+                  title: t("clusters.query.workspace.template.saved"),
+                  description: t("clusters.query.workspace.template.save_success"),
                 })
               } catch (error) {
                 console.error("Error saving template:", error)
                 toast({
-                  title: "Error",
-                  description: "Failed to save template",
+                  title: t("common.error.unknown"),
+                  description: t("clusters.query.workspace.template.save_error"),
                   variant: "destructive",
                 })
               }
@@ -180,14 +188,14 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                 if (!response.ok) throw new Error("Failed to delete template")
                 setCustomTemplates(customTemplates.filter((t) => t.id !== templateId))
                 toast({
-                  title: "Template deleted",
-                  description: "Query template has been deleted",
+                  title: t("clusters.query.workspace.template.deleted"),
+                  description: t("clusters.query.workspace.template.delete_success"),
                 })
               } catch (error) {
                 console.error("Error deleting template:", error)
                 toast({
-                  title: "Error",
-                  description: "Failed to delete template",
+                  title: t("common.error.unknown"),
+                  description: t("clusters.query.workspace.template.delete_error"),
                   variant: "destructive",
                 })
               }
@@ -217,7 +225,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                   type="text"
                   value={path}
                   onChange={(e) => setPath(e.target.value)}
-                  placeholder="Path (e.g., /_cat/indices)"
+                  placeholder={t("clusters.query.workspace.path_placeholder")}
                   className="flex-1"
                 />
                 {path.includes("{index}") && (
@@ -246,30 +254,32 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                   ) : (
                     <Play className="h-4 w-4" />
                   )}
-                  <span className="ml-2">Execute</span>
+                  <span className="ml-2">{t("clusters.query.workspace.execute")}</span>
                 </Button>
               </div>
             </div>
 
             <div className="flex-none p-4">
-              <div style={{ height: editorHeight }} className="relative border">
-                <Editor
-                  height="100%"
-                  defaultLanguage="json"
-                  value={queryBody}
-                  onChange={(value) => setQueryBody(value || "")}
-                  theme={theme === 'dark' ? 'vs-dark' : 'light'}
-                  options={{
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    fontSize: 14,
-                    tabSize: 2,
-                  }}
-                />
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-1 cursor-row-resize bg-border hover:bg-primary/50"
-                  onMouseDown={handleMouseDown}
-                />
+              <div className="editor-container relative border">
+                <div style={{ height: editorHeight }}>
+                  <Editor
+                    height="100%"
+                    defaultLanguage="json"
+                    value={queryBody}
+                    onChange={(value) => setQueryBody(value || "")}
+                    theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                    options={{
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      fontSize: 14,
+                      tabSize: 2,
+                    }}
+                  />
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-1 cursor-row-resize bg-border hover:bg-primary/50"
+                    onMouseDown={handleMouseDown}
+                  />
+                </div>
               </div>
             </div>
 

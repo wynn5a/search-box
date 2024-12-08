@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 
 interface QueryTemplateManagerProps {
   customTemplates: QueryTemplate[]
@@ -42,6 +43,7 @@ export function QueryTemplateManager({
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const { toast } = useToast()
+  const t = useTranslations()
 
   const categories = ["all", ...Array.from(new Set([
     ...defaultTemplates.map((t) => t.category),
@@ -84,13 +86,13 @@ export function QueryTemplateManager({
       setName("")
       setDescription("")
       toast({
-        title: "Template saved",
-        description: "Query template has been saved successfully",
+        title: t('clusters.query.template_manager.save.success_title'),
+        description: t('clusters.query.template_manager.save.success_description'),
       })
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save template",
+        title: t('clusters.query.template_manager.save.error_title'),
+        description: error instanceof Error ? error.message : t('clusters.query.template_manager.save.error_description'),
         variant: "destructive",
       })
     }
@@ -106,8 +108,8 @@ export function QueryTemplateManager({
       setTemplateToDelete(null)
       setDeleteDialogOpen(false)
       toast({
-        title: "Template deleted",
-        description: "The template has been deleted successfully",
+        title: t('clusters.query.template_manager.delete.success.title'),
+        description: t('clusters.query.template_manager.delete.success.description'),
       })
     }
   }
@@ -170,7 +172,7 @@ export function QueryTemplateManager({
     <div className="h-full flex flex-col">
       <div className="shrink-0 space-y-4 p-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Query Templates</h3>
+          <h3 className="text-lg font-medium">{t('clusters.query.title')}</h3>
           <Button
             variant="outline"
             size="sm"
@@ -178,7 +180,7 @@ export function QueryTemplateManager({
             disabled={!currentQuery}
           >
             <Save className="h-4 w-4 mr-2" />
-            Save Current
+            {t('clusters.query.template_manager.save.button')}
           </Button>
         </div>
 
@@ -186,7 +188,7 @@ export function QueryTemplateManager({
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search"
+              placeholder={t('clusters.query.template_manager.search.placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -197,12 +199,16 @@ export function QueryTemplateManager({
             onValueChange={setSelectedCategory}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select category" />
+              <SelectValue placeholder={t('clusters.query.template_manager.category.all')} />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
-                  {category === "all" ? "All Categories" : category}
+                  {category === "all" 
+                    ? t('clusters.query.template_manager.category.all')
+                    : category === "custom"
+                    ? t('clusters.query.template_manager.category.custom')
+                    : category}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -220,7 +226,7 @@ export function QueryTemplateManager({
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="default" className="flex-1">
-              Default
+              {t('clusters.query.template_manager.tabs.default')}
               <Badge variant="secondary" className="ml-2">
                 {filteredDefaultTemplates.length}
               </Badge>
@@ -234,7 +240,7 @@ export function QueryTemplateManager({
               <div className="p-4 space-y-2">
                 {filteredCustomTemplates.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
-                    No custom templates found
+                    {t('clusters.query.template_manager.empty.custom')}
                   </div>
                 ) : (
                   filteredCustomTemplates.map((template) => renderTemplateCard(template, true))
@@ -247,7 +253,7 @@ export function QueryTemplateManager({
               <div className="p-4 space-y-2">
                 {filteredDefaultTemplates.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
-                    No default templates found
+                    {t('clusters.query.template_manager.empty.default')}
                   </div>
                 ) : (
                   filteredDefaultTemplates.map((template) => renderTemplateCard(template))
@@ -261,38 +267,43 @@ export function QueryTemplateManager({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save Current Query as Template</DialogTitle>
+            <DialogTitle>{t('clusters.query.template_manager.save.title')}</DialogTitle>
+            <DialogDescription>
+              {t('clusters.query.template_manager.save.description.text')}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label>{t('clusters.query.template_manager.save.name.label')}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Template name"
+                placeholder={t('clusters.query.template_manager.save.name.placeholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t('clusters.query.template_manager.save.template_description.label')}</Label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Template description"
+                placeholder={t('clusters.query.template_manager.save.template_description.placeholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t('clusters.query.template_manager.save.category.label')}</Label>
               <Select
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={t('clusters.query.template_manager.category.all')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category === "all" ? "Custom" : category}
+                      {category === "all" 
+                        ? t('clusters.query.template_manager.category.custom')
+                        : category}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -303,7 +314,7 @@ export function QueryTemplateManager({
               onClick={handleSaveTemplate}
               disabled={!name || !description}
             >
-              Save Template
+              {t('clusters.query.template_manager.save.submit')}
             </Button>
           </div>
         </DialogContent>
@@ -312,9 +323,9 @@ export function QueryTemplateManager({
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Template</DialogTitle>
+            <DialogTitle>{t('clusters.query.template_manager.delete.title')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the template "{templateToDelete?.name}"? This action cannot be undone.
+              {t('clusters.query.template_manager.delete.description.text')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -325,13 +336,13 @@ export function QueryTemplateManager({
                 setDeleteDialogOpen(false);
               }}
             >
-              Cancel
+              {t('clusters.query.template_manager.delete.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteConfirm}
             >
-              Delete
+              {t('clusters.query.template_manager.delete.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

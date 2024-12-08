@@ -14,7 +14,7 @@
     "status": {
       "healthy": "健康",
       "warning": "警告",
-      "error": "异常",
+      "error": "错误",
       "unknown": "未知",
       "green": "绿色",
       "yellow": "黄色",
@@ -22,9 +22,9 @@
     },
     "time": {
       "just_now": "刚刚",
-      "minutes_ago": "{count}分钟前",
-      "hours_ago": "{count}小时前",
-      "days_ago": "{count}天前",
+      "minutes_ago": "{count} 分钟前",
+      "hours_ago": "{count} 小时前",
+      "days_ago": "{count} 天前",
       "never": "从未连接"
     },
     "error": {
@@ -32,6 +32,15 @@
     },
     "value": {
       "empty": "-"
+    },
+    "select": {
+      "placeholder": "请选择...",
+      "all": {
+        "star": "所有索引 (*)",
+        "all": "所有索引 (_all)"
+      },
+      "userIndices": "用户索引",
+      "systemIndices": "系统索引"
     }
   },
   "home": {
@@ -49,9 +58,9 @@
       "storage_stats": "所有集群的存储总量",
       "shards_status": "分片状态",
       "active_shards": "活跃分片",
-      "clusters": "集群列表",
+      "clusters": "集群",
       "no_clusters": "未找到集群",
-      "try_different_filter": "尝试使用不同的搜索条件或筛选条件",
+      "try_different_filter": "尝试使用不同的搜索词或筛选条件",
       "search": {
         "placeholder": "搜索集群..."
       },
@@ -60,7 +69,7 @@
           "placeholder": "按健康状态筛选",
           "all": "所有集群",
           "healthy": "健康",
-          "unhealthy": "异常"
+          "unhealthy": "不健康"
         }
       },
       "button": {
@@ -69,7 +78,7 @@
       "error": {
         "get_clusters": {
           "title": "错误",
-          "description": "获取集群列表失败"
+          "description": "获取集群失败"
         },
         "refresh": {
           "title": "错误",
@@ -80,7 +89,7 @@
         "title": "分片状态",
         "total": "总分片数",
         "active": "活跃",
-        "relocating": "迁移中",
+        "relocating": "重新分配中",
         "initializing": "初始化中",
         "unassigned": "未分配"
       }
@@ -97,7 +106,7 @@
       "form": {
         "name": {
           "label": "集群名称",
-          "description": "为集群设置一个友好的名称",
+          "description": "为此集群设置一个友好的名称",
           "placeholder": "我的集群"
         },
         "url": {
@@ -145,32 +154,32 @@
           "title": "高级设置",
           "localPort": {
             "label": "本地端口",
-            "description": "SSH 隧道本地端口",
+            "description": "SSH 隧道的本地端口",
             "placeholder": "9200"
           },
           "remoteHost": {
             "label": "远程主机",
-            "description": "SSH 隧道远程主机",
+            "description": "SSH 隧道的远程主机",
             "placeholder": "localhost"
           },
           "remotePort": {
             "label": "远程端口",
-            "description": "SSH 隧道远程端口",
+            "description": "SSH 隧道的远程端口",
             "placeholder": "9200"
           }
         }
       },
       "validation": {
-        "name": "集群名称至少需要2个字符",
-        "url": "请输入有效的URL地址",
-        "ssh": "SSH主机、用户和密码或密钥文件为必填项"
+        "name": "名称至少需要 2 个字符",
+        "url": "请输入有效的 URL",
+        "ssh": "SSH 主机、用户和密码或密钥文件是必需的"
       },
       "error": {
         "title": "添加集群失败",
         "description": "请检查输入并重试"
       },
       "success": {
-        "title": "集群添加成功",
+        "title": "集群已添加",
         "description": "集群已成功添加"
       }
     },
@@ -181,24 +190,25 @@
     },
     "page": {
       "overview": "概览",
-      "query": "数据查询",
+      "query": "查询",
       "tabs": {
-        "indices": "索引列表",
-        "settings": "集群设置"
+        "indices": "索引",
+        "settings": "设置"
       }
     },
     "overview": {
       "version": "版本",
       "error": {
-        "load_failed": "无法加载集群统计信息"
+        "load_failed": "加载集群统计信息失败"
       },
       "status": {
         "title": "集群状态",
         "nodes": "{count} 个节点",
-        "shards": "{count} 个活动分片"
+        "shards": "{count} 个活跃分片"
       },
       "indices": {
         "title": "索引",
+        "total": "总索引数",
         "docs": "{count} 个文档"
       },
       "storage": {
@@ -244,122 +254,6 @@
       "empty": "没有找到索引",
       "search": {
         "placeholder": "搜索索引..."
-      }
-    },
-    "settings": {
-      "descriptions": {
-        "number_of_replicas": "每个主分片的副本数量。增加副本数可以提高可用性和读取性能，但会占用更多存储空间。",
-        "refresh_interval": "索引的刷新间隔，决定了新写入的数据多久可以被搜索到。较短的间隔会增加实时性但可能影响写入性能。",
-        "max_result_window": "from + size 的最大值，用于分页查询。增大此值可能会占用更多内存。",
-        "blocks": {
-          "read_only": "设置索引为只读模式，禁止写入和元数据修改。",
-          "read_only_allow_delete": "设置索引为只读模式，但允许删除操作。通常在磁盘空间不足时自动启用。",
-          "read": "禁止对索引的读取操作。",
-          "write": "禁止对索引的写入操作，但允许元数据修改。"
-        }
-      },
-      "labels": {
-        "basic": "基本设置",
-        "access": "访问控制",
-        "replicas": "副本数量",
-        "refresh": "刷新间隔",
-        "window": "最大结果窗口",
-        "read_only": "只读模式",
-        "read_only_delete": "只读（允许删除）",
-        "read": "禁止读取",
-        "write": "禁止写入"
-      },
-      "actions": {
-        "save": "保存更改",
-        "refresh": "刷新"
-      },
-      "messages": {
-        "update_success": "设置已更新",
-        "update_basic_success": "基本设置已更新",
-        "update_access_success": "访问控制设置已更新",
-        "update_failed": "更新失败",
-        "try_again": "请稍后重试",
-        "fetch_failed": "获取设置失败"
-      },
-      "type": {
-        "persistent": "持久化设置",
-        "transient": "临时设置",
-        "defaults": "默认设置"
-      },
-      "search": {
-        "placeholder": "搜索设置..."
-      }
-    },
-    "mappings": {
-      "field_types": {
-        "undefined": "未知",
-        "text": "文本",
-        "keyword": "关键字",
-        "long": "长整数",
-        "integer": "整数",
-        "short": "短整数",
-        "byte": "字节",
-        "double": "双精度",
-        "float": "单精度",
-        "boolean": "布尔值",
-        "date": "日期",
-        "object": "对象",
-        "nested": "嵌套"
-      },
-      "labels": {
-        "title": "索引映射",
-        "name": "字段名称",
-        "type": "字段类型",
-        "index": "可索引",
-        "store": "存储字段",
-        "analyzer": "分析器",
-        "search_analyzer": "搜索分析器",
-        "format": "格式",
-        "advanced": "高级设置",
-        "field_settings": "配置字段属性",
-        "delete_warning": "删除字段 \"{field}\" 可能会导致数据不一致。建议按照以下步骤操作：",
-        "migration_steps": {
-          "1": "先迁移或删除包含此字段的文档",
-          "2": "重建索引以应用新的映射"
-        },
-        "delete_confirm": "确定要删除此字段吗？"
-      },
-      "actions": {
-        "add": "添加字段",
-        "save": "保存更改",
-        "refresh": "刷新",
-        "edit": "编辑字段",
-        "delete": "删除字段",
-        "view_json": "查看 JSON",
-        "view_table": "表格视图",
-        "confirm": "确定",
-        "cancel": "取消"
-      },
-      "dialogs": {
-        "add": {
-          "title": "添加新字段",
-          "description": "配置新字段的属性"
-        },
-        "edit": {
-          "title": "编辑字段",
-          "description": "修改字段属性"
-        },
-        "delete": {
-          "title": "删除字段",
-          "description": "确定要删除这个字段吗？此操作无法撤销。",
-          "confirm": "删除",
-          "cancel": "取消"
-        }
-      },
-      "messages": {
-        "save_success": "映射已更新",
-        "save_description": "索引映射已成功更新",
-        "delete_success": "字段已删除",
-        "delete_description": "请记得保存更改以应用到索引",
-        "fetch_failed": "获取映射失败",
-        "update_failed": "更新映射失败",
-        "delete_failed": "删除字段失败",
-        "no_mappings": "没有找到字段映射"
       }
     }
   },
@@ -426,8 +320,13 @@
         "total_count": "总计: {count} 条",
         "storage_size": "存储大小",
         "storage_description": "所有索引占用的存储空间",
-        "health_status": "索引健康状态",
-        "health_description": "{yellow} 个警告 / {red} 个异常"
+        "health_status": "健康状态",
+        "health_description": "{yellow} 个警告 / {red} 个错误",
+        "error": {
+          "title": "获取统计信息失败",
+          "fetch_failed": "获取集群统计信息失败",
+          "unknown": "未知错误"
+        }
       },
       "indices": {
         "title": "索引列表",
@@ -503,6 +402,114 @@
             "error_title": "创建索引失败",
             "error_description": "请稍后重试"
           }
+        }
+      }
+    },
+    "query": {
+      "title": "查询",
+      "workspace": {
+        "method": {
+          "title": "方法"
+        },
+        "execute": "执行",
+        "path_placeholder": "路径 (例如: /_cat/indices)",
+        "index_required": "需要选择索引",
+        "select_index": "请从下拉列表中选择一个索引",
+        "json_error": "JSON 格式错误",
+        "check_json": "请检查请求体的 JSON 格式是否正确",
+        "template": {
+          "saved": "模板已保存",
+          "save_success": "查询模板保存成功",
+          "save_error": "保存模板失败",
+          "deleted": "模板已删除",
+          "delete_success": "查询模板删除成功",
+          "delete_error": "删除模板失败",
+          "load_error": "加载自定义模板失败",
+          "generated": "生成成功",
+          "generate_success": "{type}模板生成成功",
+          "generate_error": "生成{type}模板失败，请确保索引存在且有映射配置",
+          "generating": "生成中...",
+          "generate": "生成{type}模板",
+          "bulk": "批量",
+          "document": "文档"
+        }
+      },
+      "results": {
+        "execution_time": "执行时间：{seconds}秒",
+        "view": {
+          "table": "表格视图",
+          "json": "JSON 视图"
+        },
+        "empty": {
+          "title": "暂无结果",
+          "description": "执行查询后将在此处显示结果"
+        },
+        "table": {
+          "previous": "上一页",
+          "next": "下一页",
+          "columns": "列",
+          "no_results": "暂无数据"
+        }
+      },
+      "template_manager": {
+        "search": {
+          "placeholder": "搜索模板..."
+        },
+        "category": {
+          "all": "所有分类",
+          "custom": "自定义"
+        },
+        "tabs": {
+          "default": "默认模板",
+          "custom": "自定义模板"
+        },
+        "save": {
+          "button": "保存当前查询",
+          "title": "保存查询模板",
+          "description": {
+            "text": "将当前查询保存为模板以供将来使用"
+          },
+          "name": {
+            "label": "模板名称",
+            "placeholder": "请输入模板名称"
+          },
+          "template_description": {
+            "label": "描述",
+            "placeholder": "请输入模板描述"
+          },
+          "category": {
+            "label": "分类"
+          },
+          "submit": "保存模板",
+          "success": {
+            "title": "模板已保存",
+            "description": "查询模板已成功保存"
+          },
+          "error": {
+            "title": "错误",
+            "description": "保存模板失败"
+          }
+        },
+        "delete": {
+          "title": "删除模板",
+          "description": {
+            "text": "确定要删除这个模板吗？此操作无法撤消。"
+          },
+          "cancel": "取消",
+          "confirm": "删除",
+          "success": {
+            "title": "模板已删除",
+            "description": "查询模板已成功删除"
+          },
+          "error": {
+            "title": "错误",
+            "description": "删除模板失败"
+          }
+        },
+        "empty": {
+          "filtered": "没有找到匹配的模板",
+          "custom": "没有找到自定义模板",
+          "default": "没有找到默认模板"
         }
       }
     }
@@ -581,6 +588,7 @@
     },
     "mappings": {
       "field_types": {
+        "undefined": "未知",
         "text": "文本",
         "keyword": "关键字",
         "long": "长整数",
