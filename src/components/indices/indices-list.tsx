@@ -283,7 +283,7 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
         </div>
       </div>
 
-      <ScrollArea className="h-[500px] rounded-md border">
+      <ScrollArea className="h-[350px] rounded-md border">
         <Table className="text-center">
           <TableHeader>
             <TableRow>

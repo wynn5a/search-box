@@ -16,13 +16,13 @@ export default async function IndicesPage(props: { params: Promise<{ clusterId: 
           currentPage={t('indices_management')} 
         />
       </div>
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+      <div className="flex-1 p-6 space-y-6 h-full">
         <IndicesStats clusterId={params.clusterId} />
-        <Card>
-          <CardHeader>
+        <Card className="border-none p-0">
+          <CardHeader className="px-0 py-6">
             <CardTitle>{t('indices_list')}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 p-0">
             <IndicesList clusterId={params.clusterId} />
           </CardContent>
         </Card>

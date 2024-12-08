@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, RefreshCw, Cog, ListFilter, User } from "lucide-react"
+import { Search, RefreshCw, Cog, ListFilter, User, List } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -117,6 +117,11 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
     return <LoadingSkeleton />
   }
 
+  function goToManageIndices(e: React.MouseEvent): void {
+    e.preventDefault();
+    router.push(`/clusters/${clusterId}/indices`);  
+  }
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
@@ -147,18 +152,29 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
             </TabsList>
           </Tabs>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={fetchIndices}
-          disabled={refreshing}
-        >
-          <RefreshCw className={cn(
-            "h-4 w-4 mr-2",
-            refreshing && "animate-spin"
-          )} />
-          {t("common.button.refresh")}
-        </Button>
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={goToManageIndices}
+            disabled={refreshing}
+          >
+            <List className="h-4 w-4 mr-2" />
+            {t("cluster.indices.manage")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchIndices}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn(
+              "h-4 w-4 mr-2",
+              refreshing && "animate-spin"
+            )} />
+            {t("common.button.refresh")}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 border rounded overflow-auto">

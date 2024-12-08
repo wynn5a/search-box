@@ -190,6 +190,7 @@ class OpenSearchClient {
       const response = await this.client.cat.indices({
         format: "json",
         bytes: "b",
+        v: true,
         h: "health,status,index,uuid,pri,rep,docs.count,docs.deleted,store.size,pri.store.size",
         expand_wildcards: "all"
       })

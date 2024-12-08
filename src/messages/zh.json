@@ -254,7 +254,8 @@
       "empty": "没有找到索引",
       "search": {
         "placeholder": "搜索索引..."
-      }
+      },
+      "manage": "管理索引"
     }
   },
   "clusters": {

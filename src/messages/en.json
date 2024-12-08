@@ -253,7 +253,8 @@
       "empty": "No indices found",
       "search": {
         "placeholder": "Search indices..."
-      }
+      },
+      "manage": "Manage Indices"
     },
     "settings": {
       "descriptions": {

@@ -16,7 +16,6 @@ export async function GET(request: NextRequest, props: { params: Promise<{ clust
 
     const client = await OpenSearchClient.getInstance(cluster)
     const indices = await client.listIndices()
-
     return {
       success: true,
       data: indices
