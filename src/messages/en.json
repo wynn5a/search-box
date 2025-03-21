@@ -410,7 +410,15 @@
       },
       "testing": {
         "in_progress": "Testing...",
-        "test_connection": "Test Connection"
+        "test_connection": "Test Connection",
+        "success": {
+          "title": "Connection test Successful",
+          "description": "Successfully established connection"
+        },
+        "error": {
+          "title": "Connection Test Failed",
+          "description": "Failed to establish connection"
+        }
       },
       "delete": {
         "title": "Confirm Delete",
@@ -581,6 +589,10 @@
         "save": {
           "button": "Save Current Query",
           "title": "Save Query Template",
+          "success_title": "Template Saved",
+          "success_description": "Query template has been saved successfully",
+          "error_title": "Error",
+          "error_description": "Failed to save template",
           "description": {
             "text": "Save your current query as a template for future use"
           },

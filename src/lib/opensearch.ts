@@ -1,5 +1,5 @@
 import { Client } from '@opensearch-project/opensearch'
-import { ClusterConfig } from '@/types/cluster'
+import { ClusterConfig } from '../types/cluster'
 import { tunnelManager } from './tunnel-manager'
 import { ApiError } from './errors/api-error'
 import { decrypt } from './utils/crypto'
@@ -32,7 +32,7 @@ class OpenSearchClient {
       auth: config.username && config.password ? {
         username: config.username,
         password: '***'
-      } : undefined
+      } : 'Not provided'
     })
 
     let auth: { username: string; password: string } | undefined = undefined
@@ -59,7 +59,7 @@ class OpenSearchClient {
         minVersion: 'TLSv1.2',
         maxVersion: 'TLSv1.3'
       },
-      requestTimeout: 30000,
+      requestTimeout: 60000, 
       sniffOnStart: false,
       sniffOnConnectionFault: false,
       resurrectStrategy: 'ping',
@@ -82,8 +82,7 @@ class OpenSearchClient {
             sshPassword: config.sshPassword || undefined,
             sshKeyFile: config.sshKeyFile || undefined,
             localPort: config.localPort || 9300,
-            remoteHost: config.remoteHost || 'localhost',
-            remotePort: config.remotePort || 9200,
+            clusterUrl: config.url
           })
         } catch (error: any) {
           console.error('Failed to create SSH tunnel:', error)
@@ -94,15 +93,19 @@ class OpenSearchClient {
           )
         }
 
-        // 添加延迟，等待隧道完全建立
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // 增加延迟，等待隧道完全建立
+        await new Promise(resolve => setTimeout(resolve, 10000))
       }
 
       if (!OpenSearchClient.instances.has(key)) {
         const instance = new OpenSearchClient(config)
         // 测试连接
         try {
-          await instance.client.cluster.health({})
+          // 使用更长的超时时间进行健康检查
+          await instance.client.cluster.health({
+            timeout: '30s', // 设置更长的健康检查超时
+            wait_for_status: 'yellow', // 只需要等待集群至少为黄色状态
+          })
           OpenSearchClient.instances.set(key, instance)
         } catch (error) {
           console.error('Failed to connect to OpenSearch: ' + config.name, error)

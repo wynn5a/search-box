@@ -32,8 +32,7 @@ export async function POST(request: Request) {
         sshPassword: body.sshPassword,
         sshKeyFile: body.sshKeyFile,
         localPort: testPort,
-        remoteHost: body.remoteHost || 'localhost',
-        remotePort: body.remotePort || 9200,
+        clusterUrl: '',
       })
 
       console.log('SSH tunnel created successfully')

@@ -21,9 +21,6 @@ const createClusterSchema = z.object({
   sshUser: z.string().nullable().optional(),
   sshPassword: z.string().nullable().optional(),
   sshKeyFile: z.string().nullable().optional(),
-  localPort: z.coerce.number().nullable().optional(),
-  remoteHost: z.string().nullable().optional(),
-  remotePort: z.coerce.number().nullable().optional(),
 }).refine((data) => {
   if (data.sshEnabled) {
     return !!(data.sshHost && data.sshUser && (data.sshPassword || data.sshKeyFile))
@@ -43,10 +40,10 @@ export async function POST(request: Request) {
     const testPort = getRandomPort()
     
     // 处理 remoteHost，移除可能的协议前缀
-    let remoteHost = data.remoteHost
+    let remoteHost = 'localhost'
     try {
-      if (remoteHost?.startsWith('http')) {
-        const url = new URL(remoteHost)
+      if (data.url?.startsWith('http')) {
+        const url = new URL(data.url)
         remoteHost = url.hostname
       }
     } catch (e) {
@@ -55,8 +52,8 @@ export async function POST(request: Request) {
     
     // 测试连接
     const testClient = await OpenSearchClient.getInstance({
-      id: 'test',
-      name: 'test',
+      id: `testing-${data.name}`,
+      name: data.name,
       url: data.url,
       username: data.username || undefined,
       password: data.password? encrypt(data.password) : undefined,
@@ -67,8 +64,7 @@ export async function POST(request: Request) {
       sshPassword: data.sshPassword? encrypt(data.sshPassword) : undefined,
       sshKeyFile: data.sshKeyFile || undefined,
       localPort: data.sshEnabled ? testPort : undefined,
-      remoteHost: remoteHost || undefined,  // 使用处理后的 remoteHost
-      remotePort: data.remotePort || undefined,
+      remoteHost: remoteHost,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -103,9 +99,9 @@ export async function POST(request: Request) {
         sshUser: data.sshUser || null,
         sshPassword: encryptedSshPassword,
         sshKeyFile: data.sshKeyFile || null,
-        localPort: data.localPort || null,
-        remoteHost: remoteHost || null,  // 使用处理后的 remoteHost
-        remotePort: data.remotePort || null,
+        localPort: data.sshEnabled ? testPort : null,
+        remoteHost: remoteHost,
+        remotePort: 9200,
       },
     })
 

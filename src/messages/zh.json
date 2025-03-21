@@ -296,7 +296,15 @@
       },
       "testing": {
         "in_progress": "测试中...",
-        "test_connection": "测试连接"
+        "test_connection": "测试连接",
+        "success": {
+          "title": "连接成功",
+          "description": "成功建立连接"
+        },
+        "error": {
+          "title": "测试失败",
+          "description": "无法建立连接"
+        }
       },
       "delete": {
         "title": "确认删除",
@@ -467,6 +475,10 @@
         "save": {
           "button": "保存当前查询",
           "title": "保存查询模板",
+          "success_title": "模板已保存",
+          "success_description": "查询模板已成功保存",
+          "error_title": "错误",
+          "error_description": "保存模板失败",
           "description": {
             "text": "将当前查询保存为模板以供将来使用"
           },

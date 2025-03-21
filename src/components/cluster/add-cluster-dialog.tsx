@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Network } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -42,9 +41,6 @@ const clusterFormSchema = z.object({
   sshUser: z.string().default(""),
   sshPassword: z.string().default(""),
   sshKeyFile: z.string().default(""),
-  localPort: z.coerce.number().default(9200),
-  remoteHost: z.string().default("localhost"),
-  remotePort: z.coerce.number().default(9200),
 }).refine((data) => {
   if (data.sshEnabled) {
     return !!(data.sshHost && data.sshUser && (data.sshPassword || data.sshKeyFile))
@@ -86,9 +82,6 @@ export function AddClusterDialog({
       sshUser: "",
       sshPassword: "",
       sshKeyFile: "",
-      localPort: 9200,
-      remoteHost: "localhost",
-      remotePort: 9200,
     },
   })
 
@@ -101,9 +94,6 @@ export function AddClusterDialog({
       form.setValue("sshPassword", "")
       form.setValue("sshKeyFile", "")
       form.setValue("sshPort", 22)
-      form.setValue("localPort", 9200)
-      form.setValue("remoteHost", "localhost")
-      form.setValue("remotePort", 9200)
     }
   }, [sshEnabled, form])
 
@@ -130,9 +120,6 @@ export function AddClusterDialog({
           sshUser: form.getValues("sshUser"),
           sshPassword: form.getValues("sshPassword"),
           sshKeyFile: form.getValues("sshKeyFile"),
-          localPort: form.getValues("localPort"),
-          remoteHost: form.getValues("remoteHost"),
-          remotePort: form.getValues("remotePort"),
         }),
       })
 
@@ -208,150 +195,147 @@ export function AddClusterDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <Tabs defaultValue="basic">
-              <TabsList>
-                <TabsTrigger value="basic">基本配置</TabsTrigger>
-                <TabsTrigger value="ssh">SSH 隧道</TabsTrigger>
-              </TabsList>
-              <TabsContent value="basic" className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>集群名称</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Cluster name" {...field} />
-                      </FormControl>
+            {/* Basic Configuration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>集群名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Cluster name" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      用于标识不同的集群
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>集群地址</FormLabel>
+                    <FormControl>
+                      <Input placeholder="http://localhost:9200" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      OpenSearch 集群的访问地址
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field: { value, ...field } }) => (
+                  <FormItem>
+                    <FormLabel>用户名（可选）</FormLabel>
+                    <FormControl>
+                      <Input placeholder="用户名" value={value || ""} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field: { value, ...field } }) => (
+                  <FormItem>
+                    <FormLabel>密码（可选）</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="密码" value={value || ""} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* SSH Tunnel Configuration */}
+            <div className="pt-4 border-t">
+              <FormField
+                control={form.control}
+                name="sshEnabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        启用 SSH 隧道
+                      </FormLabel>
                       <FormDescription>
-                        用于标识不同的集群
+                        通过 SSH 隧道连接到集群
                       </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>集群地址</FormLabel>
-                      <FormControl>
-                        <Input placeholder="http://localhost:9200" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        OpenSearch 集群的访问地址
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field: { value, ...field } }) => (
-                    <FormItem>
-                      <FormLabel>用户名（可选）</FormLabel>
-                      <FormControl>
-                        <Input placeholder="用户名" value={value || ""} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field: { value, ...field } }) => (
-                    <FormItem>
-                      <FormLabel>密码（可选）</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="密码" value={value || ""} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-              <TabsContent value="ssh" className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="sshEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          启用 SSH 隧道
-                        </FormLabel>
-                        <FormDescription>
-                          通过 SSH 隧道连接到集群
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                {sshEnabled && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="sshHost"
-                        render={({ field: { value, ...field } }) => (
-                          <FormItem>
-                            <FormLabel>SSH 主机地址</FormLabel>
-                            <FormControl>
-                              <Input placeholder="example.com" value={value || ""} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="sshPort"
-                        render={({ field: { value, ...field } }) => (
-                          <FormItem>
-                            <FormLabel>SSH 端口</FormLabel>
-                            <FormControl>
-                              <Input type="number" value={value || ""} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="sshUser"
-                      render={({ field: { value, ...field } }) => (
-                        <FormItem>
-                          <FormLabel>SSH 用户名</FormLabel>
-                          <FormControl>
-                            <Input value={value || ""} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="sshPassword"
-                      render={({ field: { value, ...field } }) => (
-                        <FormItem>
-                          <FormLabel>SSH 密码</FormLabel>
-                          <FormControl>
-                            <Input type="password" value={value || ""} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              {sshEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="sshHost"
+                    render={({ field: { value, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>SSH 主机地址</FormLabel>
+                        <FormControl>
+                          <Input placeholder="example.com" value={value || ""} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="sshPort"
+                    render={({ field: { value, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>SSH 端口</FormLabel>
+                        <FormControl>
+                          <Input type="number" value={value || ""} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="sshUser"
+                    render={({ field: { value, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>SSH 用户名</FormLabel>
+                        <FormControl>
+                          <Input value={value || ""} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="sshPassword"
+                    render={({ field: { value, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>SSH 密码</FormLabel>
+                        <FormControl>
+                          <Input type="password" value={value || ""} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="col-span-1 md:col-span-2">
                     <FormField
                       control={form.control}
                       name="sshKeyFile"
@@ -363,6 +347,7 @@ export function AddClusterDialog({
                               placeholder="-----BEGIN RSA PRIVATE KEY-----"
                               value={value || ""}
                               {...field}
+                              rows={4}
                             />
                           </FormControl>
                           <FormDescription>
@@ -372,71 +357,30 @@ export function AddClusterDialog({
                         </FormItem>
                       )}
                     />
-                    <div className="grid grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="localPort"
-                        render={({ field: { value, ...field } }) => (
-                          <FormItem>
-                            <FormLabel>本地端口</FormLabel>
-                            <FormControl>
-                              <Input type="number" value={value || ""} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="remoteHost"
-                        render={({ field: { value, ...field } }) => (
-                          <FormItem>
-                            <FormLabel>远程主机</FormLabel>
-                            <FormControl>
-                              <Input placeholder="localhost" value={value || ""} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="remotePort"
-                        render={({ field: { value, ...field } }) => (
-                          <FormItem>
-                            <FormLabel>远程端口</FormLabel>
-                            <FormControl>
-                              <Input type="number" value={value || ""} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={testTunnel}
-                        disabled={testingTunnel}
-                      >
-                        {testingTunnel ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            测试中...
-                          </>
-                        ) : (
-                          <>
-                            <Network className="mr-2 h-4 w-4" />
-                            测试隧道连接
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </TabsContent>
-            </Tabs>
+                  </div>
+                  <div className="col-span-1 md:col-span-2 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={testTunnel}
+                      disabled={testingTunnel}
+                    >
+                      {testingTunnel ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          测试中...
+                        </>
+                      ) : (
+                        <>
+                          <Network className="mr-2 h-4 w-4" />
+                          测试隧道连接
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
             <DialogFooter>
               <Button type="submit" disabled={submitting}>
                 {submitting ? (
@@ -454,4 +398,4 @@ export function AddClusterDialog({
       </DialogContent>
     </Dialog>
   )
-} 
+}
