@@ -22,7 +22,9 @@ const nextConfig = {
     },
     eslint: {
         ignoreDuringBuilds: true
-    }
+    },
+    // Add output configuration for Docker
+    output: 'standalone'
 }
 
 import bundleAnalyzer from '@next/bundle-analyzer'
