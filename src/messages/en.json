@@ -33,9 +33,9 @@
     "value": {
       "empty": "-"
     },
-    "select":{
+    "select": {
       "placeholder": "Select...",
-      "all":{
+      "all": {
         "star": "All Indexes (*)",
         "all": "All Indexes (_all)"
       },
@@ -172,7 +172,8 @@
       "validation": {
         "name": "Name must be at least 2 characters",
         "url": "Please enter a valid URL",
-        "ssh": "SSH host, user, and either password or key file are required"
+        "ssh": "SSH host, user, and either password or key file are required",
+        "missing_info": "Please fill in required information"
       },
       "error": {
         "title": "Failed to add cluster",

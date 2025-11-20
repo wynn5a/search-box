@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -29,28 +29,23 @@ import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Network } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { eventBus, EVENTS } from "@/lib/events"
+import { useTranslations } from "next-intl"
 
-const clusterFormSchema = z.object({
-  name: z.string().min(2, "集群名称至少2个字符"),
-  url: z.string().url("请输入有效的URL地址"),
-  username: z.string().default(""),
-  password: z.string().default(""),
-  sshEnabled: z.boolean().default(false),
-  sshHost: z.string().default(""),
-  sshPort: z.coerce.number().default(22),
-  sshUser: z.string().default(""),
-  sshPassword: z.string().default(""),
-  sshKeyFile: z.string().default(""),
-}).refine((data) => {
-  if (data.sshEnabled) {
-    return !!(data.sshHost && data.sshUser && (data.sshPassword || data.sshKeyFile))
-  }
-  return true
-}, {
-  message: "启用SSH隧道时，必须填写主机地址、用户名和认证信息",
+// Define the shape of the form values for type safety
+const baseSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  username: z.string(),
+  password: z.string(),
+  sshEnabled: z.boolean(),
+  sshHost: z.string(),
+  sshPort: z.coerce.number(),
+  sshUser: z.string(),
+  sshPassword: z.string(),
+  sshKeyFile: z.string(),
 })
 
-type ClusterFormValues = z.infer<typeof clusterFormSchema>
+type ClusterFormValues = z.infer<typeof baseSchema>
 
 interface AddClusterDialogProps {
   open: boolean
@@ -59,16 +54,40 @@ interface AddClusterDialogProps {
   trigger?: React.ReactNode
 }
 
-export function AddClusterDialog({ 
-  open, 
+export function AddClusterDialog({
+  open,
   onOpenChange,
   onSuccess,
-  trigger 
+  trigger
 }: AddClusterDialogProps) {
   const [testingTunnel, setTestingTunnel] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
-  
+  const t = useTranslations('cluster.add')
+  const tCommon = useTranslations('common')
+  const tList = useTranslations('clusters.list')
+
+  const clusterFormSchema = useMemo(() => z.object({
+    name: z.string().min(2, t('validation.name')),
+    url: z.string().url(t('validation.url')),
+    username: z.string().default(""),
+    password: z.string().default(""),
+    sshEnabled: z.boolean().default(false),
+    sshHost: z.string().default(""),
+    sshPort: z.coerce.number().default(22),
+    sshUser: z.string().default(""),
+    sshPassword: z.string().default(""),
+    sshKeyFile: z.string().default(""),
+  }).refine((data) => {
+    if (data.sshEnabled) {
+      return !!(data.sshHost && data.sshUser && (data.sshPassword || data.sshKeyFile))
+    }
+    return true
+  }, {
+    message: t('validation.ssh'),
+    path: ["sshHost"], // Attach error to a field to make it visible
+  }), [t])
+
   const form = useForm<ClusterFormValues>({
     resolver: zodResolver(clusterFormSchema),
     defaultValues: {
@@ -100,8 +119,8 @@ export function AddClusterDialog({
   async function testTunnel() {
     if (!form.getValues("sshHost") || !form.getValues("sshUser")) {
       toast({
-        title: "请填写必要信息",
-        description: "SSH主机地址和用户名是必需的",
+        title: t('validation.missing_info'),
+        description: t('validation.ssh'),
         variant: "destructive",
       })
       return
@@ -129,14 +148,14 @@ export function AddClusterDialog({
       }
 
       toast({
-        title: "SSH隧道测试成功",
-        description: "可以正常建立SSH连接",
+        title: tList('testing.success.title'),
+        description: tList('testing.success.description'),
       })
     } catch (error) {
       console.error("SSH tunnel test error:", error)
       toast({
-        title: "SSH隧道测试失败",
-        description: error instanceof Error ? error.message : "无法建立SSH连接",
+        title: tList('testing.error.title'),
+        description: error instanceof Error ? error.message : tList('testing.error.description'),
         variant: "destructive",
       })
     } finally {
@@ -161,19 +180,19 @@ export function AddClusterDialog({
       }
 
       toast({
-        title: "集群添加成功",
-        description: "新的集群已成功添加",
+        title: t('success.title'),
+        description: t('success.description'),
       })
 
-      // 触发集群添加事件
+      // Trigger cluster added event
       eventBus.emit(EVENTS.CLUSTER_ADDED)
-      
+
       form.reset()
       onSuccess?.()
     } catch (error) {
       toast({
-        title: "添加集群失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t('error.title'),
+        description: error instanceof Error ? error.message : t('error.description'),
         variant: "destructive",
       })
     } finally {
@@ -188,9 +207,9 @@ export function AddClusterDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>添加新集群</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            添加一个新的 OpenSearch 集群连接配置
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -202,12 +221,12 @@ export function AddClusterDialog({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>集群名称</FormLabel>
+                    <FormLabel>{t('form.name.label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Cluster name" {...field} />
+                      <Input placeholder={t('form.name.placeholder')} {...field} />
                     </FormControl>
                     <FormDescription>
-                      用于标识不同的集群
+                      {t('form.name.description')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -218,12 +237,12 @@ export function AddClusterDialog({
                 name="url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>集群地址</FormLabel>
+                    <FormLabel>{t('form.url.label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="http://localhost:9200" {...field} />
+                      <Input placeholder={t('form.url.placeholder')} {...field} />
                     </FormControl>
                     <FormDescription>
-                      OpenSearch 集群的访问地址
+                      {t('form.url.description')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -234,9 +253,9 @@ export function AddClusterDialog({
                 name="username"
                 render={({ field: { value, ...field } }) => (
                   <FormItem>
-                    <FormLabel>用户名（可选）</FormLabel>
+                    <FormLabel>{t('form.auth.username.label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="用户名" value={value || ""} {...field} />
+                      <Input placeholder={t('form.auth.username.placeholder')} value={value || ""} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -247,9 +266,9 @@ export function AddClusterDialog({
                 name="password"
                 render={({ field: { value, ...field } }) => (
                   <FormItem>
-                    <FormLabel>密码（可选）</FormLabel>
+                    <FormLabel>{t('form.auth.password.label')}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="密码" value={value || ""} {...field} />
+                      <Input type="password" placeholder={t('form.auth.password.placeholder')} value={value || ""} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -266,10 +285,10 @@ export function AddClusterDialog({
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">
-                        启用 SSH 隧道
+                        {t('form.ssh.enabled')}
                       </FormLabel>
                       <FormDescription>
-                        通过 SSH 隧道连接到集群
+                        {t('form.ssh.title')}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -288,9 +307,9 @@ export function AddClusterDialog({
                     name="sshHost"
                     render={({ field: { value, ...field } }) => (
                       <FormItem>
-                        <FormLabel>SSH 主机地址</FormLabel>
+                        <FormLabel>{t('form.ssh.host.label')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="example.com" value={value || ""} {...field} />
+                          <Input placeholder={t('form.ssh.host.placeholder')} value={value || ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -301,9 +320,9 @@ export function AddClusterDialog({
                     name="sshPort"
                     render={({ field: { value, ...field } }) => (
                       <FormItem>
-                        <FormLabel>SSH 端口</FormLabel>
+                        <FormLabel>{t('form.ssh.port.label')}</FormLabel>
                         <FormControl>
-                          <Input type="number" value={value || ""} {...field} />
+                          <Input type="number" placeholder={t('form.ssh.port.placeholder')} value={value || ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -314,9 +333,9 @@ export function AddClusterDialog({
                     name="sshUser"
                     render={({ field: { value, ...field } }) => (
                       <FormItem>
-                        <FormLabel>SSH 用户名</FormLabel>
+                        <FormLabel>{t('form.ssh.user.label')}</FormLabel>
                         <FormControl>
-                          <Input value={value || ""} {...field} />
+                          <Input placeholder={t('form.ssh.user.placeholder')} value={value || ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -327,9 +346,9 @@ export function AddClusterDialog({
                     name="sshPassword"
                     render={({ field: { value, ...field } }) => (
                       <FormItem>
-                        <FormLabel>SSH 密码</FormLabel>
+                        <FormLabel>{t('form.ssh.password.label')}</FormLabel>
                         <FormControl>
-                          <Input type="password" value={value || ""} {...field} />
+                          <Input type="password" placeholder={t('form.ssh.password.placeholder')} value={value || ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -341,17 +360,17 @@ export function AddClusterDialog({
                       name="sshKeyFile"
                       render={({ field: { value, ...field } }) => (
                         <FormItem>
-                          <FormLabel>SSH 私钥（可选）</FormLabel>
+                          <FormLabel>{t('form.ssh.keyFile.label')}</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="-----BEGIN RSA PRIVATE KEY-----"
+                              placeholder={t('form.ssh.keyFile.placeholder')}
                               value={value || ""}
                               {...field}
                               rows={4}
                             />
                           </FormControl>
                           <FormDescription>
-                            如果使用密钥认证，请粘贴私钥内容
+                            {t('form.ssh.keyFile.description')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -368,12 +387,12 @@ export function AddClusterDialog({
                       {testingTunnel ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          测试中...
+                          {tList('testing.in_progress')}
                         </>
                       ) : (
                         <>
                           <Network className="mr-2 h-4 w-4" />
-                          测试隧道连接
+                          {tCommon('button.test')}
                         </>
                       )}
                     </Button>
@@ -386,10 +405,10 @@ export function AddClusterDialog({
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    添加中...
+                    {t('button')}...
                   </>
                 ) : (
-                  "添加集群"
+                  t('button')
                 )}
               </Button>
             </DialogFooter>
