@@ -786,5 +786,34 @@
         "no_mappings": "No field mappings found"
       }
     }
+  },
+  "auth": {
+    "loginTitle": "Sign In",
+    "loginDescription": "Enter your credentials to access your account",
+    "signupTitle": "Create Account",
+    "signupDescription": "Sign up to get started with Search Box",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "name": "Name",
+    "namePlaceholder": "Enter your name (optional)",
+    "login": "Sign In",
+    "signup": "Sign Up",
+    "signOut": "Sign Out",
+    "loggingIn": "Signing in...",
+    "signingUp": "Creating account...",
+    "loginError": "Invalid email or password",
+    "signupError": "Failed to create account. Please try again.",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signupLink": "Sign up",
+    "loginLink": "Sign in",
+    "user": "User",
+    "signOutConfirmTitle": "Sign Out",
+    "signOutConfirmDescription": "Are you sure you want to sign out?",
+    "cancel": "Cancel"
   }
 }

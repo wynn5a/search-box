@@ -672,5 +672,34 @@
         "no_mappings": "没有找到字段映射"
       }
     }
+  },
+  "auth": {
+    "loginTitle": "登录",
+    "loginDescription": "输入您的凭据以访问您的账户",
+    "signupTitle": "创建账户",
+    "signupDescription": "注册以开始使用 Search Box",
+    "email": "邮箱",
+    "emailPlaceholder": "输入您的邮箱",
+    "password": "密码",
+    "passwordPlaceholder": "输入您的密码",
+    "confirmPassword": "确认密码",
+    "confirmPasswordPlaceholder": "确认您的密码",
+    "name": "姓名",
+    "namePlaceholder": "输入您的姓名（可选）",
+    "login": "登录",
+    "signup": "注册",
+    "signOut": "退出登录",
+    "loggingIn": "登录中...",
+    "signingUp": "创建账户中...",
+    "loginError": "邮箱或密码无效",
+    "signupError": "创建账户失败，请重试",
+    "noAccount": "还没有账户？",
+    "hasAccount": "已有账户？",
+    "signupLink": "注册",
+    "loginLink": "登录",
+    "user": "用户",
+    "signOutConfirmTitle": "退出登录",
+    "signOutConfirmDescription": "您确定要退出登录吗？",
+    "cancel": "取消"
   }
 }

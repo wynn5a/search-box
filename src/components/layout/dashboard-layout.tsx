@@ -5,6 +5,7 @@ import { useTheme } from "next-themes"
 import { Moon, Sun } from "lucide-react"
 import Link from "next/link"
 import { LanguageToggle } from "@/components/language-toggle"
+import { UserMenu } from "@/components/auth/user-menu"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { setTheme, theme } = useTheme()
@@ -19,6 +20,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+            <UserMenu />
             <LanguageToggle />
             <Button
               variant="ghost"
