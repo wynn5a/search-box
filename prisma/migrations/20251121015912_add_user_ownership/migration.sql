@@ -5,6 +5,12 @@
   - Added the required column `userId` to the `QueryTemplate` table without a default value. This is not possible if the table is not empty.
 
 */
+
+-- clear data in Cluster and QueryTemplate
+DELETE FROM "Cluster";
+
+DELETE FROM "QueryTemplate";
+
 -- AlterTable
 ALTER TABLE "Cluster" ADD COLUMN     "userId" TEXT NOT NULL;
 
