@@ -12,7 +12,7 @@ import { useTheme } from "next-themes"
 import { Input } from "../ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Play, Loader2 } from "lucide-react"
-import { QueryTemplateManager} from "./query-template-manager"
+import { QueryTemplateManager } from "./query-template-manager"
 import { type QueryTemplate } from "@/config/default-templates"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { TemplateGeneratorButton } from "./template-generator-button"
@@ -34,7 +34,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
   const { toast } = useToast()
   const { theme } = useTheme()
   const t = useTranslations()
-  
+
   // 使用自定义 hooks
   const { indices, refresh } = useIndices(clusterId)
   const { loading: executing, results, executionTime, executeQuery, resetResults } = useQueryExecution(clusterId, {
@@ -116,21 +116,30 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
     }
 
     try {
-      // 解析请求体
-      let parsedBody
-      try {
-        parsedBody = queryBody && queryBody.trim() !== '' ? JSON.parse(queryBody) : undefined
-      } catch (e) {
-        toast({
-          title: t("clusters.query.workspace.json_error"),
-          description: e instanceof Error ? e.message : t("clusters.query.workspace.check_json"),
-          variant: "destructive",
-        })
-        return
-      }
-
       // 替换路径中的 {index} 占位符
       const processedPath = path.replace("{index}", selectedIndex)
+
+      // Check if this is a bulk operation
+      const isBulkOperation = processedPath.includes('_bulk')
+
+      let parsedBody
+      if (isBulkOperation) {
+        // For bulk operations, pass the body as a raw string (NDJSON format)
+        parsedBody = queryBody && queryBody.trim() !== '' ? queryBody : undefined
+      } else {
+        // For non-bulk operations, parse as JSON
+        try {
+          parsedBody = queryBody && queryBody.trim() !== '' ? JSON.parse(queryBody) : undefined
+        } catch (e) {
+          toast({
+            title: t("clusters.query.workspace.json_error"),
+            description: e instanceof Error ? e.message : t("clusters.query.workspace.check_json"),
+            variant: "destructive",
+          })
+          return
+        }
+      }
+
       await executeQuery(method, processedPath, parsedBody)
     } catch (error) {
       console.error("Error executing query:", error)
@@ -203,9 +212,9 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
             onSelectTemplate={handleTemplateSelect}
           />
         </ResizablePanel>
-        
+
         <ResizableHandle />
-        
+
         <ResizablePanel defaultSize={75}>
           <div className="h-full flex flex-col">
             <div className="flex-none p-4">
@@ -235,17 +244,38 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
                     onIndexChange={setSelectedIndex}
                   />
                 )}
-                {selectedIndex !== "__placeholder__" && path.includes("/_doc") 
-                && selectedIndex !== "*"
-                && selectedIndex !== "_all"
-                && (
-                  <TemplateGeneratorButton
-                    client={client}
-                    index={selectedIndex}
-                    onGenerated={setQueryBody}
-                  />
-                )}
-                <Button 
+                {(() => {
+                  // Only show generate template button for single document insert operations
+                  // Check if this is a document insert operation (/_doc but not /_bulk or /_search)
+                  const isDocInsert = path.includes("/_doc") && !path.includes("/_bulk") && !path.includes("/_search");
+
+                  if (!isDocInsert) {
+                    return null;
+                  }
+
+                  // Determine the actual index to use for template generation
+                  let indexForTemplate: string | null = null;
+
+                  if (path.includes("{index}") && selectedIndex !== "__placeholder__" && selectedIndex !== "*" && selectedIndex !== "_all") {
+                    // Using placeholder syntax with selected index
+                    indexForTemplate = selectedIndex;
+                  } else if (path.includes("/_doc")) {
+                    // Try to extract index from manually typed path like "my-index/_doc" or "/my-index/_doc"
+                    const pathParts = path.replace(/^\//, '').split('/');
+                    if (pathParts.length >= 1 && pathParts[0] && !pathParts[0].startsWith('_')) {
+                      indexForTemplate = pathParts[0];
+                    }
+                  }
+
+                  return indexForTemplate ? (
+                    <TemplateGeneratorButton
+                      client={client}
+                      index={indexForTemplate}
+                      onGenerated={setQueryBody}
+                    />
+                  ) : null;
+                })()}
+                <Button
                   onClick={handleExecute}
                   disabled={executing || !path || (path.includes("{index}") && (selectedIndex === "__placeholder__" || !selectedIndex))}
                 >

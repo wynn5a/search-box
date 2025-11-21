@@ -32,7 +32,7 @@ interface IndexMapping {
 function getDefaultValueForType(type: string, fieldName: string = ""): any {
   // 智能字段识别 - 根据字段名推断类型
   const nameLower = fieldName.toLowerCase()
-  
+
   // 常见字段名匹配
   if (nameLower.includes("email") || nameLower.endsWith("mail")) {
     return getRandomEmail()
@@ -55,27 +55,27 @@ function getDefaultValueForType(type: string, fieldName: string = ""): any {
   if (nameLower.includes("tags") || nameLower.includes("labels") || nameLower.includes("categories")) {
     return getRandomTags()
   }
-  if (nameLower.includes("description") || nameLower.includes("desc") || 
-      nameLower.includes("content") || nameLower.includes("text") || 
-      nameLower.includes("summary") || nameLower.includes("comment")) {
+  if (nameLower.includes("description") || nameLower.includes("desc") ||
+    nameLower.includes("content") || nameLower.includes("text") ||
+    nameLower.includes("summary") || nameLower.includes("comment")) {
     return getRandomWords(5)
   }
-  if (nameLower.includes("created") || nameLower.includes("updated") || 
-      nameLower.includes("timestamp") || nameLower.includes("date") || 
-      nameLower.includes("time")) {
+  if (nameLower.includes("created") || nameLower.includes("updated") ||
+    nameLower.includes("timestamp") || nameLower.includes("date") ||
+    nameLower.includes("time")) {
     return getRandomDate()
   }
-  if (nameLower.includes("enabled") || nameLower.includes("active") || 
-      nameLower.includes("visible") || nameLower.includes("deleted") ||
-      nameLower.includes("flag")) {
+  if (nameLower.includes("enabled") || nameLower.includes("active") ||
+    nameLower.includes("visible") || nameLower.includes("deleted") ||
+    nameLower.includes("flag")) {
     return getRandomBoolean()
   }
-  if (nameLower.includes("count") || nameLower.includes("number") || 
-      nameLower.includes("qty") || nameLower.includes("amount")) {
+  if (nameLower.includes("count") || nameLower.includes("number") ||
+    nameLower.includes("qty") || nameLower.includes("amount")) {
     return getRandomInt(0, 1000)
   }
-  if (nameLower.includes("price") || nameLower.includes("cost") || 
-      nameLower.includes("rate") || nameLower.includes("percentage")) {
+  if (nameLower.includes("price") || nameLower.includes("cost") ||
+    nameLower.includes("rate") || nameLower.includes("percentage")) {
     return getRandomFloat(0, 1000)
   }
 
@@ -140,29 +140,39 @@ function generateTemplateFromMapping(mapping: FieldMapping, path: string[] = [])
 
 export async function generateDocumentTemplate(client: OpenSearchClient, index: string): Promise<string> {
   try {
+    // Validate index name
+    if (!index || index === '__placeholder__' || index.includes('{') || index.includes('}')) {
+      throw new Error(`Invalid index name: "${index}". Please select a valid index from the dropdown.`);
+    }
+
+    console.log('Generating template for index:', index);
+
     const response = await client.executeQuery({
       method: 'GET',
       path: `/${index}/_mapping`
     });
 
-    if (!response || !response.success) {
-      throw new Error(`No response received for index ${index}`);
+    console.log('Mapping response:', response);
+
+    // Unwrap the API response if it's wrapped in {success, data}
+    const mappingResponse = (response as any).success && (response as any).data
+      ? (response as any).data
+      : response;
+
+    if (!mappingResponse || !mappingResponse[index]) {
+      // List available indices in the response to help debug
+      const availableIndices = mappingResponse ? Object.keys(mappingResponse).join(', ') : 'none';
+      throw new Error(`Index "${index}" not found in mapping response. Available indices: ${availableIndices}`);
     }
 
-    console.log('Mapping response:', response)
-
-    if (!response.data || !response.data[index]) {
-      throw new Error(`Index ${index} not found`);
-    }
-
-    const mapping = response.data[index] as IndexMapping;
+    const mapping = mappingResponse[index] as IndexMapping;
     if (!mapping?.mappings?.properties) {
       throw new Error(`No mapping properties found for index ${index}`);
     }
 
-    const template = generateTemplateFromMapping({ 
-      type: 'object', 
-      properties: mapping.mappings.properties 
+    const template = generateTemplateFromMapping({
+      type: 'object',
+      properties: mapping.mappings.properties
     });
 
     return JSON.stringify(template, null, 2);
@@ -178,12 +188,12 @@ export async function generateBulkTemplate(client: OpenSearchClient, index: stri
   try {
     const singleTemplate = await generateDocumentTemplate(client, index);
     const singleObject = JSON.parse(singleTemplate);
-    
+
     const lines: string[] = [];
     for (let i = 0; i < count; i++) {
       // Add metadata line
       lines.push(JSON.stringify({ index: { _index: index } }) + '\n');
-      
+
       // Add data line with modified values to make each document unique
       const modifiedObject = JSON.parse(JSON.stringify(singleObject));
       Object.keys(modifiedObject).forEach(key => {
@@ -213,7 +223,7 @@ export async function generateBulkTemplate(client: OpenSearchClient, index: stri
       });
       lines.push(JSON.stringify(modifiedObject) + '\n');
     }
-    
+
     return lines.join('');
   } catch (error) {
     console.error('Error generating bulk template:', error);

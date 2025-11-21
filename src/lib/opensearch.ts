@@ -59,7 +59,7 @@ class OpenSearchClient {
         minVersion: 'TLSv1.2',
         maxVersion: 'TLSv1.3'
       },
-      requestTimeout: 60000, 
+      requestTimeout: 60000,
       sniffOnStart: false,
       sniffOnConnectionFault: false,
       resurrectStrategy: 'ping',
@@ -174,11 +174,35 @@ class OpenSearchClient {
       const cleanPath = path.startsWith('/') ? path.slice(1) : path
 
       try {
+        // Check if it's a bulk request
+        const isBulk = cleanPath.includes('_bulk')
+
+        let requestBody = body
+        let headers: Record<string, string> | undefined = undefined
+
+        if (isBulk) {
+          headers = { 'Content-Type': 'application/x-ndjson' }
+          // For bulk requests, convert string to Buffer to ensure it's sent as-is
+          // without any client-side serialization or modification
+          if (typeof body === 'string') {
+            requestBody = Buffer.from(body)
+          }
+        } else if (typeof body === 'string') {
+          // If not bulk and body is string, try to parse it as JSON
+          try {
+            requestBody = JSON.parse(body)
+          } catch (e) {
+            // If parsing fails, send as is
+          }
+        }
+
         // 使用低级 API 直接发送请求
         const response = await this.client.transport.request({
           method,
           path: `/${cleanPath}`,
-          body,
+          body: requestBody,
+        }, {
+          headers
         })
         return response.body
       } catch (error) {

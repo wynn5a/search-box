@@ -213,6 +213,24 @@ export const defaultTemplates: QueryTemplate[] = [
   },
   // Document Operations
   {
+    id: "list-documents",
+    name: "List All Documents",
+    description: "List all documents in an index with pagination",
+    method: "POST",
+    path: "/{index}/_search",
+    body: `{
+  "query": {
+    "match_all": {}
+  },
+  "from": 0,
+  "size": 100
+}`,
+    tags: ["document", "list", "search", "query"],
+    category: "Document Operations",
+    isDefault: true,
+    docUrl: "https://opensearch.org/docs/latest/api-reference/search/",
+  },
+  {
     id: "insert-document",
     name: "Insert Document",
     description: "Insert a single document into an index",
@@ -241,16 +259,11 @@ export const defaultTemplates: QueryTemplate[] = [
     description: "Insert multiple documents in a single request",
     method: "POST",
     path: "/_bulk",
-    body: `{ "index": { "_index": "my-index" } }
-{
-  "field1": "doc1-value1",
-  "field2": "doc1-value2"
-}
-{ "index": { "_index": "my-index" } }
-{
-  "field1": "doc2-value1",
-  "field2": "doc2-value2"
-}`,
+    body: `{"index":{"_index":"my-index"}}
+{"field1":"doc1-value1","field2":"doc1-value2"}
+{"index":{"_index":"my-index"}}
+{"field1":"doc2-value1","field2":"doc2-value2"}
+`,
     tags: ["document", "bulk", "insert", "index"],
     category: "Document Operations",
     isDefault: true,
