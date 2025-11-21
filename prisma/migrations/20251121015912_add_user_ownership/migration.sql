@@ -6,11 +6,6 @@
 
 */
 
--- clear data in Cluster and QueryTemplate
-DELETE FROM "QueryTemplate";
-
-DELETE FROM "Cluster";
-
 -- AlterTable
 ALTER TABLE "Cluster" ADD COLUMN     "userId" TEXT NOT NULL;
 
