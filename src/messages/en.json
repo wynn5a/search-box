@@ -177,7 +177,12 @@
       },
       "error": {
         "title": "Failed to add cluster",
-        "description": "Please check your input and try again"
+        "description": "Please check your input and try again",
+        "connection": "Unable to connect to cluster",
+        "connection_details": "Connection timeout or unable to access. Please check the cluster address and authentication information.",
+        "validation_failed": "Validation failed",
+        "unknown": "Failed to add cluster",
+        "unauthorized": "Unauthorized"
       },
       "success": {
         "title": "Cluster added",

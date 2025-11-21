@@ -9,7 +9,6 @@ import { AlertCircle, Database, HardDrive, Layers, Loader2, Power, PowerOff } fr
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
-import { Badge } from "../ui/badge"
 
 interface IndexStats {
   health: string

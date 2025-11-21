@@ -8,7 +8,10 @@ export async function POST(
   const { clusterId, index, action } = await context.params
   try {
 
-    await clusterService.executeIndexOperation(clusterId, {
+    const { getUserId } = await import("@/lib/utils/auth-utils")
+    const userId = await getUserId()
+
+    await clusterService.executeIndexOperation(clusterId, userId, {
       method: 'POST',
       path: `/${index}/_${action}`,
     })
@@ -20,9 +23,9 @@ export async function POST(
   } catch (error) {
     console.error(`Index ${action} error:`, error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : `Failed to ${action} index` 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : `Failed to ${action} index`
       },
       { status: 500 }
     )

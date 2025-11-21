@@ -3,7 +3,9 @@ import { clusterService } from "@/lib/services/cluster-service"
 
 export async function GET() {
   try {
-    const clusters = await clusterService.getAllClusters()
+    const { getUserId } = await import("@/lib/utils/auth-utils")
+    const userId = await getUserId()
+    const clusters = await clusterService.getAllClusters(userId)
     return NextResponse.json({
       success: true,
       data: clusters,

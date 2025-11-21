@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { ClusterOverview } from "./cluster-overview"
-import { clusterService } from "@/lib/services/cluster-service"
+
 import { ClusterConfig } from "@/types/cluster"
 import { Button } from "@/components/ui/button"
 import { Database, Settings } from "lucide-react"
@@ -25,8 +25,16 @@ export function ClusterOverviewContent() {
   useEffect(() => {
     async function fetchClusters() {
       try {
-        const clustersData = await clusterService.getAllClusters()
-        setClusters(clustersData)
+        const response = await fetch('/api/clusters')
+        if (!response.ok) {
+          throw new Error('Failed to fetch clusters')
+        }
+        const result = await response.json()
+        if (result.success) {
+          setClusters(result.data)
+        } else {
+          throw new Error(result.error || 'Failed to fetch clusters')
+        }
       } catch (error) {
         console.error('Failed to fetch clusters:', error)
       } finally {

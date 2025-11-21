@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { getUserId } from "@/lib/utils/auth-utils"
 
 export async function DELETE(
   request: Request,
@@ -8,10 +9,27 @@ export async function DELETE(
 ) {
   const params = await props.params;
   try {
-    await prisma.queryTemplate.delete({
+    const userId = await getUserId()
+
+    // Verify template ownership by checking if user owns the cluster
+    const template = await prisma.queryTemplate.findFirst({
       where: {
         id: params.templateId,
         clusterId: params.clusterId,
+        userId
+      },
+    })
+
+    if (!template) {
+      return NextResponse.json(
+        { error: "Template not found" },
+        { status: 404 }
+      )
+    }
+
+    await prisma.queryTemplate.delete({
+      where: {
+        id: params.templateId,
       },
     })
 

@@ -177,7 +177,12 @@
       },
       "error": {
         "title": "添加集群失败",
-        "description": "请检查输入并重试"
+        "description": "请检查输入并重试",
+        "connection": "无法连接到集群",
+        "connection_details": "连接超时或无法访问。请检查集群地址和认证信息。",
+        "validation_failed": "验证失败",
+        "unknown": "添加集群失败",
+        "unauthorized": "未授权"
       },
       "success": {
         "title": "集群已添加",

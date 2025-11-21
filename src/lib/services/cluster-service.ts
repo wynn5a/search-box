@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/errors/api-error"
 export class ClusterService {
   private static instance: ClusterService
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): ClusterService {
     if (!ClusterService.instance) {
@@ -16,9 +16,12 @@ export class ClusterService {
     return ClusterService.instance
   }
 
-  public async getCluster(id: string): Promise<ClusterConfig> {
-    const cluster = await prisma.cluster.findUnique({
-      where: { id }
+  public async getCluster(id: string, userId: string): Promise<ClusterConfig> {
+    const cluster = await prisma.cluster.findFirst({
+      where: {
+        id,
+        userId
+      }
     })
 
     if (!cluster) {
@@ -28,18 +31,18 @@ export class ClusterService {
     return this.transformClusterData(cluster)
   }
 
-  public async getOpenSearchClient(clusterId: string): Promise<OpenSearchClient> {
-    const config = await this.getCluster(clusterId)
+  public async getOpenSearchClient(clusterId: string, userId: string): Promise<OpenSearchClient> {
+    const config = await this.getCluster(clusterId, userId)
     return OpenSearchClient.getInstance(config)
   }
 
-  public async executeQuery(clusterId: string, params: { 
-    method: string, 
-    path: string, 
-    body?: any 
+  public async executeQuery(clusterId: string, userId: string, params: {
+    method: string,
+    path: string,
+    body?: any
   }) {
     try {
-      const client = await this.getOpenSearchClient(clusterId)
+      const client = await this.getOpenSearchClient(clusterId, userId)
       const result = await client.executeQuery(params)
       await this.updateLastConnected(clusterId)
       return result
@@ -49,13 +52,13 @@ export class ClusterService {
     }
   }
 
-  public async executeIndexOperation(clusterId: string, params: {
+  public async executeIndexOperation(clusterId: string, userId: string, params: {
     method: string,
     path: string,
     body?: any
   }) {
     try {
-      const client = await this.getOpenSearchClient(clusterId)
+      const client = await this.getOpenSearchClient(clusterId, userId)
       const result = await client.executeQuery(params)
       await this.updateLastConnected(clusterId)
       return result
@@ -65,14 +68,14 @@ export class ClusterService {
     }
   }
 
-  public async getClusterHealth(clusterId: string) {
+  public async getClusterHealth(clusterId: string, userId: string) {
     try {
-      const client = await this.getOpenSearchClient(clusterId)
+      const client = await this.getOpenSearchClient(clusterId, userId)
       const [health, stats] = await Promise.all([
         client.getClusterHealth(),
         client.getClusterStats(),
       ])
-      
+
       return {
         health,
         stats,
@@ -105,40 +108,13 @@ export class ClusterService {
     }
   }
 
-  public async getAllClustersHealth() {
-    const clusters = await prisma.cluster.findMany()
-    const results = await Promise.allSettled(
-      clusters.map(async (cluster) => {
-        try {
-          const client = await OpenSearchClient.getInstance(this.transformClusterData(cluster))
-          const health = await client.getClusterHealth()
-          return {
-            clusterId: cluster.id,
-            health: health.status
-          }
-        } catch (error) {
-          console.error(`Error getting health for cluster ${cluster.id}:`, error)
-          return {
-            clusterId: cluster.id,
-            health: 'red'
-          }
-        }
-      })
-    )
 
-    return results.map(result => {
-      if (result.status === 'fulfilled') {
-        return result.value
-      }
-      return {
-        clusterId: 'unknown',
-        health: 'red'
-      }
-    })
-  }
 
-  public async getAllClusters() {
+  public async getAllClusters(userId: string) {
     const clusters = await prisma.cluster.findMany({
+      where: {
+        userId
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -208,28 +184,31 @@ export class ClusterService {
     }))
   }
 
-  public async getDefaultCluster() {
+  public async getDefaultCluster(userId: string) {
     const cluster = await prisma.cluster.findFirst({
       where: {
         isDefault: true,
+        userId
       },
     })
     return cluster ? this.transformClusterData(cluster) : null
   }
 
-  public async setDefaultCluster(clusterId: string) {
+  public async setDefaultCluster(clusterId: string, userId: string) {
     await prisma.$transaction([
       prisma.cluster.updateMany({
         where: {
           isDefault: true,
+          userId
         },
         data: {
           isDefault: false,
         },
       }),
-      prisma.cluster.update({
+      prisma.cluster.updateMany({
         where: {
           id: clusterId,
+          userId
         },
         data: {
           isDefault: true,
@@ -238,9 +217,12 @@ export class ClusterService {
     ])
   }
 
-  public async deleteCluster(clusterId: string) {
-    const cluster = await prisma.cluster.findUnique({
-      where: { id: clusterId },
+  public async deleteCluster(clusterId: string, userId: string) {
+    const cluster = await prisma.cluster.findFirst({
+      where: {
+        id: clusterId,
+        userId
+      },
     })
 
     if (!cluster) {

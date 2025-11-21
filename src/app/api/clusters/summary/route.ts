@@ -12,8 +12,10 @@ interface ClusterSummary {
 
 export async function GET(): Promise<NextResponse> {
   return handleApiRoute<ClusterSummary>(async () => {
-    const clusters = await clusterService.getAllClusters()
-    
+    const { getUserId } = await import("@/lib/utils/auth-utils")
+    const userId = await getUserId()
+    const clusters = await clusterService.getAllClusters(userId)
+
     let totalIndices = 0
     let totalStorage = 0
     let healthyClusters = 0
@@ -40,13 +42,13 @@ export async function GET(): Promise<NextResponse> {
     return {
       success: true,
       data: {
-          totalClusters: clusters.length,
-          healthyClusters,
-          unhealthyClusters,
-          totalIndices,
-          totalStorage,
+        totalClusters: clusters.length,
+        healthyClusters,
+        unhealthyClusters,
+        totalIndices,
+        totalStorage,
       }
-  };
+    };
   }, {
     errorMessage: 'Failed to fetch clusters summary'
   })

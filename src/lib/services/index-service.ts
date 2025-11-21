@@ -4,7 +4,7 @@ import { ApiError } from "@/lib/errors/api-error"
 export class IndexService {
   private static instance: IndexService
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): IndexService {
     if (!IndexService.instance) {
@@ -13,9 +13,9 @@ export class IndexService {
     return IndexService.instance
   }
 
-  public async listIndices(clusterId: string) {
+  public async listIndices(clusterId: string, userId: string) {
     try {
-      const client = await clusterService.getOpenSearchClient(clusterId)
+      const client = await clusterService.getOpenSearchClient(clusterId, userId)
       return client.listIndices()
     } catch (error) {
       if (error instanceof Error) {
@@ -25,9 +25,9 @@ export class IndexService {
     }
   }
 
-  public async createIndex(clusterId: string, name: string, settings: any) {
+  public async createIndex(clusterId: string, userId: string, name: string, settings: any) {
     try {
-      const client = await clusterService.getOpenSearchClient(clusterId)
+      const client = await clusterService.getOpenSearchClient(clusterId, userId)
       return client.createIndex(name, settings)
     } catch (error) {
       if (error instanceof Error) {
@@ -37,14 +37,14 @@ export class IndexService {
     }
   }
 
-  public async executeQuery(clusterId: string, params: {
+  public async executeQuery(clusterId: string, userId: string, params: {
     index: string
     method: string
     path: string
     body?: any
   }) {
     try {
-      const client = await clusterService.getOpenSearchClient(clusterId)
+      const client = await clusterService.getOpenSearchClient(clusterId, userId)
       return client.executeQuery(params)
     } catch (error) {
       if (error instanceof Error) {

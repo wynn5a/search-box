@@ -163,6 +163,25 @@ export function AddClusterDialog({
     }
   }
 
+  // Map API error messages to translation keys
+  const getErrorMessage = (apiError: string): string => {
+    // Check for common error patterns
+    if (apiError.includes('Unable to connect') || apiError.includes('connect')) {
+      return t('error.connection')
+    }
+    if (apiError.includes('Unauthorized')) {
+      return t('error.unauthorized')
+    }
+    if (apiError.includes('Validation failed')) {
+      return t('error.validation_failed')
+    }
+    if (apiError.includes('Failed to add cluster')) {
+      return t('error.unknown')
+    }
+    // Return the API error as fallback
+    return apiError
+  }
+
   const onSubmit = async (values: z.infer<typeof clusterFormSchema>) => {
     try {
       setSubmitting(true)
@@ -190,9 +209,10 @@ export function AddClusterDialog({
       form.reset()
       onSuccess?.()
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : t('error.description')
       toast({
         title: t('error.title'),
-        description: error instanceof Error ? error.message : t('error.description'),
+        description: getErrorMessage(errorMessage),
         variant: "destructive",
       })
     } finally {

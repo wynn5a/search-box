@@ -3,7 +3,6 @@ import { IndexMappings } from "@/components/cluster/index-mappings"
 import { IndexOverview } from "@/components/cluster/index-overview"
 import { IndexSettings } from "@/components/cluster/index-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card } from "@/components/ui/card"
 import { getTranslations } from "next-intl/server"
 
 export const dynamic = 'force-dynamic'

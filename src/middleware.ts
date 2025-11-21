@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { authConfig } from "./auth.config";
 import NextAuth from "next-auth";

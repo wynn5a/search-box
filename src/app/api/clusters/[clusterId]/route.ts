@@ -1,26 +1,33 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { getUserId } from "@/lib/utils/auth-utils"
 import { tunnelManager } from "@/lib/tunnel-manager"
+
+type RouteParams = {
+    params: Promise<{ clusterId: string }>
+}
 
 export async function DELETE(
     request: Request,
-    context: { params: Promise<{ clusterId: string }> }
+    { params }: RouteParams
 ) {
-    const { clusterId } = await context.params
+    const { clusterId } = await params
     try {
+        const userId = await getUserId()
         // Use transaction to ensure atomicity
         return await prisma.$transaction(async (tx) => {
-            const cluster = await tx.cluster.findUnique({
+            const cluster = await tx.cluster.findFirst({
                 where: {
                     id: clusterId,
+                    userId,
                 },
             })
 
             if (!cluster) {
-                return NextResponse.json(
-                    { error: "Cluster not found" },
-                    { status: 404 }
-                )
+                return NextResponse.json({
+                    success: false,
+                    error: "集群不存在",
+                }, { status: 404 })
             }
 
             if (cluster.sshEnabled) {
@@ -54,22 +61,21 @@ export async function DELETE(
 
 export async function GET(
     request: Request,
-    context: { params: Promise<{ clusterId: string }> }
+    { params }: RouteParams
 ) {
     try {
-        const clusterId = (await context.params).clusterId;
+        const userId = await getUserId()
+        const { clusterId } = await params
 
         if (!clusterId) {
             return NextResponse.json({ error: "Invalid cluster ID" }, { status: 400 });
         }
 
         // 更新集群的最后连接时间并获取集群信息
-        const cluster = await prisma.cluster.update({
+        const cluster = await prisma.cluster.findFirst({
             where: {
-                id: String(clusterId),
-            },
-            data: {
-                lastConnected: new Date()
+                id: clusterId,
+                userId
             }
         })
 
@@ -79,6 +85,16 @@ export async function GET(
                 { status: 404 }
             )
         }
+
+        // Update last connected time
+        await prisma.cluster.update({
+            where: {
+                id: clusterId
+            },
+            data: {
+                lastConnected: new Date()
+            }
+        })
 
         return NextResponse.json(cluster)
     } catch (error) {

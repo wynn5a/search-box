@@ -11,8 +11,8 @@ function getRandomPort(min: number = 10000, max: number = 65535): number {
 }
 
 const createClusterSchema = z.object({
-  name: z.string().min(2, "集群名称至少2个字符"),
-  url: z.string().url("请输入有效的URL地址"),
+  name: z.string().min(2, "Cluster name must be at least 2 characters"),
+  url: z.string().url("Please enter a valid URL"),
   username: z.string().nullable().optional(),
   password: z.string().nullable().optional(),
   sshEnabled: z.boolean().default(false),
@@ -27,18 +27,22 @@ const createClusterSchema = z.object({
   }
   return true
 }, {
-  message: "启用SSH隧道时，必须填写主机地址、用户名和认证信息",
+  message: "When SSH tunnel is enabled, host address, username, and authentication information are required",
 })
 
 export async function POST(request: Request) {
   try {
+    // Authenticate user
+    const { getUserId } = await import("@/lib/utils/auth-utils")
+    const userId = await getUserId()
+
     const body = await request.json()
     console.log("Creating cluster", { ...body, password: '***', sshPassword: '***' })
     const data = validateRequestBody(createClusterSchema, body)
 
     // 使用随机端口进行测试
     const testPort = getRandomPort()
-    
+
     // 处理 remoteHost，移除可能的协议前缀
     let remoteHost = 'localhost'
     try {
@@ -49,19 +53,19 @@ export async function POST(request: Request) {
     } catch (e) {
       console.error('Error parsing remoteHost:', e)
     }
-    
+
     // 测试连接
     const testClient = await OpenSearchClient.getInstance({
       id: `testing-${data.name}`,
       name: data.name,
       url: data.url,
       username: data.username || undefined,
-      password: data.password? encrypt(data.password) : undefined,
+      password: data.password ? encrypt(data.password) : undefined,
       sshEnabled: data.sshEnabled || false,
       sshHost: data.sshHost || undefined,
       sshPort: data.sshPort || undefined,
       sshUser: data.sshUser || undefined,
-      sshPassword: data.sshPassword? encrypt(data.sshPassword) : undefined,
+      sshPassword: data.sshPassword ? encrypt(data.sshPassword) : undefined,
       sshKeyFile: data.sshKeyFile || undefined,
       localPort: data.sshEnabled ? testPort : undefined,
       remoteHost: remoteHost,
@@ -73,13 +77,15 @@ export async function POST(request: Request) {
     if (!isConnected) {
       return NextResponse.json({
         success: false,
-        error: "无法连接到集群",
-        details: "连接超时或无法访问，请检查集群地址和认证信息是否正确",
+        error: "Unable to connect to cluster",
+        details: "Connection timeout or unable to access. Please check the cluster address and authentication information.",
       }, { status: 400 })
     }
 
-    // 如果是第一个集群，设置为默认集群
-    const existingClusters = await prisma.cluster.count()
+    // 如果是用户的第一个集群，设置为默认集群
+    const existingClusters = await prisma.cluster.count({
+      where: { userId }
+    })
     const isDefault = existingClusters === 0
 
     // 加密密码
@@ -102,12 +108,13 @@ export async function POST(request: Request) {
         localPort: data.sshEnabled ? testPort : null,
         remoteHost: remoteHost,
         remotePort: 9200,
+        userId,
       },
     })
 
     return NextResponse.json({
       success: true,
-      message: "集群添加成功",
+      message: "Cluster added successfully",
       cluster: {
         id: cluster.id,
         name: cluster.name,
@@ -117,29 +124,36 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error("Error creating cluster:", error)
-    
-    // 处理验证错误
+
+    // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         success: false,
-        error: "验证失败",
+        error: "Validation failed",
         details: error.errors.map(err => err.message).join(", "),
       }, { status: 400 })
     }
 
-    // 处理其他错误
+    // Handle other errors
     return NextResponse.json({
       success: false,
-      error: "添加集群失败",
-      details: error instanceof Error ? error.message : "未知错误",
+      error: "Failed to add cluster",
+      details: error instanceof Error ? error.message : "Unknown error",
     }, { status: 500 })
   }
 }
 
 export async function GET() {
   try {
+    // Authenticate user
+    const { getUserId } = await import("@/lib/utils/auth-utils")
+    const userId = await getUserId()
+
     console.log('Getting clusters from database...')
     const clusters = await prisma.cluster.findMany({
+      where: {
+        userId
+      },
       orderBy: {
         createdAt: 'desc'
       },
@@ -164,7 +178,7 @@ export async function GET() {
     })
 
     console.log('Found clusters:', clusters.length)
-    
+
     if (clusters.length === 0) {
       return NextResponse.json({
         success: true,
@@ -181,7 +195,7 @@ export async function GET() {
           const fullCluster = await prisma.cluster.findUnique({
             where: { id: cluster.id },
           })
-          
+
           if (!fullCluster) {
             console.log(`Cluster ${cluster.id} not found in database`)
             throw new Error('Cluster not found')
@@ -207,7 +221,7 @@ export async function GET() {
             updatedAt: cluster.updatedAt,
           })
           const health = await client.getClusterHealth()
-          
+
           return {
             ...cluster,
             health: {
@@ -237,8 +251,8 @@ export async function GET() {
     console.error("Error getting clusters:", error)
     return NextResponse.json({
       success: false,
-      error: "获取集群列表失败",
-      details: error instanceof Error ? error.message : "未知错误",
+      error: "Failed to get cluster list",
+      details: error instanceof Error ? error.message : "Unknown error",
     }, { status: 500 })
   }
 }

@@ -29,7 +29,6 @@ export function LanguageToggle() {
   const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
-  const t = useTranslations('common')
   const [currentLocale, setCurrentLocale] = useState(locale)
 
   useEffect(() => {

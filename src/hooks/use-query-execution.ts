@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { getFriendlyErrorMessage } from '@/lib/utils/error-utils'
+import { useLocale } from 'next-intl'
 
 interface QueryExecutionOptions {
   onSuccess?: () => Promise<void>
@@ -11,6 +12,7 @@ export function useQueryExecution(clusterId: string, options: QueryExecutionOpti
   const [results, setResults] = useState<any>(null)
   const [executionTime, setExecutionTime] = useState<number | null>(null)
   const { toast } = useToast()
+  const locale = useLocale()
 
   const resetResults = () => {
     setResults(null)
@@ -19,10 +21,10 @@ export function useQueryExecution(clusterId: string, options: QueryExecutionOpti
 
   const executeQuery = async (method: string, path: string, body?: any) => {
     const startTime = performance.now()
-    
+
     try {
       setLoading(true)
-      
+
       const response = await fetch(`/api/clusters/${clusterId}/query`, {
         method: "POST",
         headers: {
@@ -37,12 +39,12 @@ export function useQueryExecution(clusterId: string, options: QueryExecutionOpti
 
       const data = await response.json()
       setExecutionTime(performance.now() - startTime)
-      
+
       if (!response.ok) {
         setResults({ error: data.error || "查询失败" })
-        const errorMessage = getFriendlyErrorMessage(data)
+        const errorMessage = getFriendlyErrorMessage(data, locale)
         toast({
-          title: "查询失败",
+          title: locale === 'zh' ? "查询失败" : "Query Failed",
           description: errorMessage,
           variant: "destructive",
         })
@@ -57,16 +59,16 @@ export function useQueryExecution(clusterId: string, options: QueryExecutionOpti
           await options.onSuccess()
         }
         toast({
-          title: "创建成功",
-          description: "索引创建成功，已更新索引列表",
+          title: locale === 'zh' ? "创建成功" : "Created Successfully",
+          description: locale === 'zh' ? "索引创建成功，已更新索引列表" : "Index created successfully, index list updated",
         })
       }
 
       return true
     } catch (error) {
-      const errorMessage = getFriendlyErrorMessage(error)
+      const errorMessage = getFriendlyErrorMessage(error, locale)
       toast({
-        title: "错误",
+        title: locale === 'zh' ? "错误" : "Error",
         description: errorMessage,
         variant: "destructive",
       })
