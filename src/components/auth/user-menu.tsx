@@ -23,6 +23,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { User, LogOut } from "lucide-react";
+import { Link } from "@/routing";
 
 export function UserMenu() {
     const { data: session, status } = useSession();
@@ -67,6 +68,13 @@ export function UserMenu() {
                             </p>
                         </div>
                     </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/profile" className="cursor-pointer flex items-center">
+                            <User className="mr-2 h-4 w-4" />
+                            Profile
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={() => setShowSignOutDialog(true)}

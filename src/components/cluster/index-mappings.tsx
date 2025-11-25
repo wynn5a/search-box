@@ -25,10 +25,16 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCw, Save, Plus, Trash, Edit, Code } from "lucide-react"
+import { RefreshCw, Save, Plus, Trash, Edit, Code, Info } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTranslations } from "next-intl"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const FIELD_TYPES = [
   { value: 'text', label: 'text' },
@@ -76,6 +82,7 @@ interface IndexMappingsProps {
 
 export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
   const [fields, setFields] = useState<FieldConfig[]>([])
+  const [originalFieldNames, setOriginalFieldNames] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editingField, setEditingField] = useState<FieldConfig | null>(null)
@@ -109,6 +116,7 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
       }))
 
       setFields(processedFields)
+      setOriginalFieldNames(new Set(processedFields.map((f: FieldConfig) => f.name)))
     } catch (error) {
       toast({
         title: t("mappings.messages.fetch_failed"),
@@ -168,6 +176,15 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
   }
 
   const deleteField = async (fieldName: string) => {
+    if (originalFieldNames.has(fieldName)) {
+      toast({
+        title: t("mappings.messages.delete_failed"),
+        description: "Cannot delete existing fields. Reindexing is required.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       // 更新字段列表
       setFields(fields.filter((f: FieldConfig) => f.name !== fieldName))
@@ -306,35 +323,60 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    fields.map((field: FieldConfig) => (
-                      <TableRow key={field.name}>
-                        <TableCell>{field.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {t(`mappings.field_types.${field.type}`)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{field.index !== false ? "✓" : "✗"}</TableCell>
-                        <TableCell>{field.store === true ? "✓" : "✗"}</TableCell>
-                        <TableCell>{field.analyzer || "-"}</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingField(field)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setFieldToDelete(field.name)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    fields.map((field: FieldConfig) => {
+                      const isExisting = originalFieldNames.has(field.name)
+                      return (
+                        <TableRow key={field.name}>
+                          <TableCell>{field.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {t(`mappings.field_types.${field.type}`)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{field.index !== false ? "✓" : "✗"}</TableCell>
+                          <TableCell>{field.store === true ? "✓" : "✗"}</TableCell>
+                          <TableCell>{field.analyzer || "-"}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingField(field)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            {isExisting ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span tabIndex={0}>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        disabled
+                                        className="opacity-50 cursor-not-allowed"
+                                      >
+                                        <Trash className="h-4 w-4" />
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Cannot delete existing fields</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFieldToDelete(field.name)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -364,6 +406,7 @@ export function IndexMappings({ clusterId, indexName }: IndexMappingsProps) {
                     prev ? { ...prev, name: e.target.value } : null
                   )
                 }
+                disabled={!!(editingField && originalFieldNames.has(editingField.name))}
               />
             </div>
             <div className="space-y-2">

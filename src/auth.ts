@@ -24,9 +24,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         async session({ session, token }) {
             // Add user id and role to the session object
-            if (session.user) {
+            if (session.user && token.id) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
+
+                // Fetch fresh user data from database to ensure name is up to date
+                const user = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    select: { name: true, email: true, role: true }
+                });
+
+                if (user) {
+                    session.user.name = user.name;
+                    session.user.email = user.email;
+                    session.user.role = user.role as string; // Ensure role is updated too
+                }
             }
             return session;
         },
