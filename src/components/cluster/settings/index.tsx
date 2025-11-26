@@ -20,9 +20,22 @@ import { JsonViewerContainer } from "@/components/json-viewer"
 import { useTranslations } from "next-intl"
 import type { ClusterSettings as ClusterSettingsType, SettingGroup, SettingType } from "./types"
 import { organizeSettings } from "./utils"
-import { Search, RefreshCw, Database, DatabaseZap, Package } from "lucide-react"
+import { Search, RefreshCw, Database, DatabaseZap, Package, Trash2, Loader2 } from "lucide-react"
 import cn from "clsx"
 import { ConnectionErrorState } from "../connection-error-state"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { eventBus, EVENTS } from "@/lib/events"
+import { useRouter } from "@/routing"
 
 interface Props {
   clusterId: string
@@ -30,12 +43,17 @@ interface Props {
 
 export function ClusterSettings({ clusterId }: Props) {
   const t = useTranslations()
+  const router = useRouter()
+  const { toast } = useToast()
   const [settings, setSettings] = useState<ClusterSettingsType | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedType, setSelectedType] = useState<SettingType>("persistent")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [retrying, setRetrying] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [clusterName, setClusterName] = useState<string>("")
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -61,9 +79,49 @@ export function ClusterSettings({ clusterId }: Props) {
     fetchSettings()
   }, [fetchSettings])
 
+  const fetchClusterInfo = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/clusters/${clusterId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setClusterName(data.name || "")
+      }
+    } catch (err) {
+      console.error("Failed to fetch cluster info:", err)
+    }
+  }, [clusterId])
+
+  const handleDeleteCluster = async () => {
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/clusters/${clusterId}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) throw new Error("Failed to delete cluster")
+      
+      toast({
+        title: t("clusters.list.delete.success"),
+        description: t("clusters.list.delete.success_description"),
+      })
+      
+      eventBus.emit(EVENTS.CLUSTER_DELETED)
+      router.push("/clusters")
+    } catch {
+      toast({
+        title: t("clusters.list.delete.error"),
+        description: t("clusters.list.delete.error_description"),
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+    }
+  }
+
   useEffect(() => {
     fetchSettings()
-  }, [fetchSettings])
+    fetchClusterInfo()
+  }, [fetchSettings, fetchClusterInfo])
 
   const renderSettingValue = (value: any) => {
     if (value === null || value === undefined) {
@@ -218,18 +276,29 @@ export function ClusterSettings({ clusterId }: Props) {
             </TabsList>
           </Tabs>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={fetchSettings}
-          disabled={loading}
-        >
-          <RefreshCw className={cn(
-            "h-4 w-4 mr-2",
-            loading && "animate-spin"
-          )} />
-          {t("common.button.refresh")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchSettings}
+            disabled={loading}
+          >
+            <RefreshCw className={cn(
+              "h-4 w-4 mr-2",
+              loading && "animate-spin"
+            )} />
+            {t("common.button.refresh")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {t("cluster.settings.danger_zone.delete.button")}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0">
@@ -240,8 +309,8 @@ export function ClusterSettings({ clusterId }: Props) {
             variant="card"
           />
         ) : (
-          <ScrollArea className="h-[350px]">
-            <div className="space-y-4 pr-4">
+          <ScrollArea className="h-[calc(100vh-380px)]">
+            <div className="space-y-4 pr-4 pb-4">
               {loading && !retrying ? (
                 <div className="flex items-center justify-center h-40">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -257,6 +326,37 @@ export function ClusterSettings({ clusterId }: Props) {
           </ScrollArea>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("clusters.list.delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("clusters.list.delete.description", { name: clusterName })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              {t("common.button.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCluster}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t("common.button.delete")}
+                </>
+              ) : (
+                t("common.button.delete")
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

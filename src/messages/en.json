@@ -331,6 +331,15 @@
         "load_failed": {
           "title": "Failed to load settings"
         }
+      },
+      "danger_zone": {
+        "title": "Danger Zone",
+        "description": "These actions are irreversible. Please proceed with caution.",
+        "delete": {
+          "title": "Delete Cluster",
+          "description": "Once deleted, this cluster configuration cannot be recovered.",
+          "button": "Delete Cluster"
+        }
       }
     },
     "mappings": {
