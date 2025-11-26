@@ -14,6 +14,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Editor } from "@monaco-editor/react"
 import { Copy, Download, Trash2 } from "lucide-react"
+import { useTheme } from "next-themes"
 
 interface QueryResultsProps {
   result: any
@@ -36,6 +37,7 @@ export function QueryResults({
 }: QueryResultsProps) {
   const [columns, setColumns] = useState<string[]>([])
   const [rows, setRows] = useState<any[]>([])
+  const { theme } = useTheme()
 
   useEffect(() => {
     if (!result) return
@@ -177,6 +179,7 @@ export function QueryResults({
                 height="200px"
                 defaultLanguage="json"
                 value={JSON.stringify(result, null, 2)}
+                theme={theme === 'dark' ? 'vs-dark' : 'light'}
                 options={{
                   readOnly: true,
                   minimap: { enabled: false },

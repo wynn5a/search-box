@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card"
 import Editor, { useMonaco } from "@monaco-editor/react"
 import { useEffect } from "react"
+import { useTheme } from "next-themes"
 
 interface QueryBodyProps {
   value: string
@@ -18,6 +19,7 @@ export function QueryBody({
   isBulkOperation = false 
 }: QueryBodyProps) {
   const monaco = useMonaco()
+  const { theme } = useTheme()
 
   useEffect(() => {
     if (monaco) {
@@ -48,6 +50,7 @@ export function QueryBody({
           defaultLanguage={isBulkOperation ? "ndjson" : "json"}
           value={value}
           onChange={(value) => onChange(value || '')}
+          theme={theme === 'dark' ? 'vs-dark' : 'light'}
           options={{
             minimap: { enabled: false },
             fontSize: 14,
