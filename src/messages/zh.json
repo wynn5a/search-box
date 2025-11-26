@@ -24,6 +24,14 @@
       "close": "关闭",
       "delete": "删除"
     },
+    "connection_error": {
+      "title": "无法连接",
+      "description": "无法连接到集群，请检查集群是否正在运行且可以访问。",
+      "short_description": "连接不可用",
+      "retry": "重试",
+      "check_settings": "检查设置",
+      "hint": "这可能是由于网络问题、集群离线或配置错误造成的。"
+    },
     "status": {
       "healthy": "健康",
       "warning": "警告",
@@ -275,6 +283,22 @@
         "placeholder": "搜索索引..."
       },
       "manage": "管理索引"
+    },
+    "settings": {
+      "search": {
+        "placeholder": "搜索设置..."
+      },
+      "type": {
+        "persistent": "持久设置",
+        "transient": "临时设置",
+        "defaults": "默认设置"
+      },
+      "level": "第 {level} 层",
+      "error": {
+        "load_failed": {
+          "title": "加载设置失败"
+        }
+      }
     }
   },
   "clusters": {

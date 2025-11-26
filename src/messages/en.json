@@ -24,6 +24,14 @@
       "close": "Close",
       "delete": "Delete"
     },
+    "connection_error": {
+      "title": "Unable to Connect",
+      "description": "Could not establish connection to the cluster. Please check if the cluster is running and accessible.",
+      "short_description": "Connection unavailable",
+      "retry": "Retry",
+      "check_settings": "Check Settings",
+      "hint": "This may be due to network issues, cluster being offline, or incorrect configuration."
+    },
     "status": {
       "healthy": "Healthy",
       "warning": "Warning",
@@ -317,6 +325,12 @@
       },
       "search": {
         "placeholder": "Search settings..."
+      },
+      "level": "Level {level}",
+      "error": {
+        "load_failed": {
+          "title": "Failed to load settings"
+        }
       }
     },
     "mappings": {

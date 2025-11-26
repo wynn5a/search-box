@@ -18,6 +18,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { TemplateGeneratorButton } from "./template-generator-button"
 import { useOpenSearchClient } from "@/hooks/use-opensearch-client"
 import { useTranslations } from "next-intl"
+import { ConnectionErrorState } from "@/components/cluster/connection-error-state"
 
 interface QueryWorkspaceProps {
   clusterId: string
@@ -36,7 +37,7 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
   const t = useTranslations()
 
   // 使用自定义 hooks
-  const { indices, refresh } = useIndices(clusterId)
+  const { indices, loading: indicesLoading, error: indicesError, retrying, refresh, retry } = useIndices(clusterId)
   const { loading: executing, results, executionTime, executeQuery, resetResults } = useQueryExecution(clusterId, {
     onSuccess: refresh
   })
@@ -144,6 +145,19 @@ export function QueryWorkspace({ clusterId }: QueryWorkspaceProps) {
     } catch (error) {
       console.error("Error executing query:", error)
     }
+  }
+
+  // 当连接错误时显示友好的错误页面
+  if (indicesError && indices.length === 0 && !indicesLoading) {
+    return (
+      <div className="h-full flex items-center justify-center p-8">
+        <ConnectionErrorState
+          onRetry={retry}
+          retrying={retrying}
+          variant="full"
+        />
+      </div>
+    )
   }
 
   return (

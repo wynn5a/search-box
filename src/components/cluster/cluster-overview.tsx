@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, Database, HardDrive, Layers } from "lucide-react"
+import { Database, HardDrive, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
+import { ConnectionErrorGrid } from "./connection-error-state"
 
 interface ClusterStats {
   health: {
@@ -42,8 +42,9 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
   const [stats, setStats] = useState<ClusterStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retrying, setRetrying] = useState(false)
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/clusters/${clusterId}/stats`)
@@ -57,24 +58,30 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
       console.error(error)
     } finally {
       setLoading(false)
+      setRetrying(false)
     }
-  }
+  }, [clusterId, t])
+
+  const handleRetry = useCallback(() => {
+    setRetrying(true)
+    fetchStats()
+  }, [fetchStats])
 
   useEffect(() => {
     fetchStats()
-  }, [clusterId])
+  }, [fetchStats])
 
-  if (loading) {
+  if (loading && !retrying) {
     return <ClusterOverviewSkeleton />
   }
 
   if (error || !stats) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>{t("common.status.error")}</AlertTitle>
-        <AlertDescription>{error || t("cluster.overview.error.load_failed")}</AlertDescription>
-      </Alert>
+      <ConnectionErrorGrid
+        onRetry={handleRetry}
+        retrying={retrying}
+        columns={4}
+      />
     )
   }
 

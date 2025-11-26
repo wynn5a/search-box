@@ -1,14 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, Database, HardDrive, Layers, Loader2, Power, PowerOff } from "lucide-react"
+import { Database, HardDrive, Layers, Loader2, Power, PowerOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
+import { ConnectionErrorGrid } from "./connection-error-state"
 
 interface IndexStats {
   health: string
@@ -33,10 +33,11 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [operating, setOperating] = useState(false)
+  const [retrying, setRetrying] = useState(false)
   const { toast } = useToast()
   const t = useTranslations('index.overview')
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
@@ -53,8 +54,14 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
       console.error(error)
     } finally {
       setLoading(false)
+      setRetrying(false)
     }
-  }
+  }, [clusterId, indexName, t])
+
+  const handleRetry = useCallback(() => {
+    setRetrying(true)
+    fetchStats()
+  }, [fetchStats])
 
   const toggleIndex = async () => {
     try {
@@ -89,9 +96,9 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
 
   useEffect(() => {
     fetchStats()
-  }, [clusterId, indexName])
+  }, [fetchStats])
 
-  if (loading) {
+  if (loading && !retrying) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array(4).fill(0).map((_, i) => (
@@ -112,11 +119,11 @@ export function IndexOverview({ clusterId, indexName }: IndexOverviewProps) {
 
   if (error || !stats) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>{t('error.title')}</AlertTitle>
-        <AlertDescription>{error || t('error.load_failed')}</AlertDescription>
-      </Alert>
+      <ConnectionErrorGrid
+        onRetry={handleRetry}
+        retrying={retrying}
+        columns={4}
+      />
     )
   }
 

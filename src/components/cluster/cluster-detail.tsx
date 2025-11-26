@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "@/routing"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, ArrowLeft, ArrowRight, Search } from "lucide-react"
+import { ArrowLeft, ArrowRight, Search } from "lucide-react"
 import { ClusterConfig } from "@/types/cluster"
 import Link from "next/link"
+import { ConnectionErrorState } from "./connection-error-state"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ClusterStats {
   health: {
@@ -36,54 +37,85 @@ export function ClusterDetail({ clusterId }: { clusterId: string }) {
   const [stats, setStats] = useState<ClusterStats | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [retrying, setRetrying] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    const fetchClusterInfo = async () => {
-      try {
-        // 获取集群基本信息
-        const clusterResponse = await fetch(`/api/clusters/${clusterId}`)
-        if (!clusterResponse.ok) throw new Error("Failed to fetch cluster info")
-        const clusterData = await clusterResponse.json()
-        setCluster(clusterData)
+  const fetchClusterInfo = useCallback(async () => {
+    try {
+      // 获取集群基本信息
+      const clusterResponse = await fetch(`/api/clusters/${clusterId}`)
+      if (!clusterResponse.ok) throw new Error("Failed to fetch cluster info")
+      const clusterData = await clusterResponse.json()
+      setCluster(clusterData)
 
-        // 更新最近连接时间
-        await fetch(`/api/clusters/${clusterId}/connect`, {
-          method: 'POST'
-        })
+      // 更新最近连接时间
+      await fetch(`/api/clusters/${clusterId}/connect`, {
+        method: 'POST'
+      })
 
-        // 获取集群统计信息
-        const statsResponse = await fetch(`/api/clusters/${clusterId}/stats`)
-        if (!statsResponse.ok) throw new Error("Failed to fetch cluster stats")
-        const statsData = await statsResponse.json()
-        if (statsData.success) {
-          setStats(statsData.data)
-        } else {
-          throw new Error(statsData.error || "Failed to fetch stats")
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error occurred")
-      } finally {
-        setLoading(false)
+      // 获取集群统计信息
+      const statsResponse = await fetch(`/api/clusters/${clusterId}/stats`)
+      if (!statsResponse.ok) throw new Error("Failed to fetch cluster stats")
+      const statsData = await statsResponse.json()
+      if (statsData.success) {
+        setStats(statsData.data)
+        setError(null)
+      } else {
+        throw new Error(statsData.error || "Failed to fetch stats")
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error occurred")
+    } finally {
+      setLoading(false)
+      setRetrying(false)
     }
+  }, [clusterId])
 
+  const handleRetry = useCallback(() => {
+    setRetrying(true)
+    fetchClusterInfo()
+  }, [fetchClusterInfo])
+
+  useEffect(() => {
     fetchClusterInfo()
     const interval = setInterval(fetchClusterInfo, 30000)
     return () => clearInterval(interval)
-  }, [clusterId])
+  }, [fetchClusterInfo])
 
-  if (loading) {
-    return <div>加载集群信息中...</div>
+  if (loading && !retrying) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array(6).fill(0).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   if (error || !cluster) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>错误</AlertTitle>
-        <AlertDescription>{error || "集群不存在"}</AlertDescription>
-      </Alert>
+      <ConnectionErrorState
+        onRetry={handleRetry}
+        retrying={retrying}
+        variant="full"
+      />
     )
   }
 

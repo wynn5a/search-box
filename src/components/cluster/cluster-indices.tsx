@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Table,
   TableBody,
@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, RefreshCw, Cog, ListFilter, User, List } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "@/routing"
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/tooltip"
 import { useTranslations } from "next-intl"
 import { ScrollArea } from "../ui/scroll-area"
+import { ConnectionErrorState } from "./connection-error-state"
 
 interface IndexInfo {
   health: string
@@ -52,33 +52,34 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [refreshing, setRefreshing] = useState(false)
   const [indexType, setIndexType] = useState<IndexType>('user')
-  const { toast } = useToast()
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const fetchIndices = async () => {
+  const fetchIndices = useCallback(async () => {
     try {
       setRefreshing(true)
+      setError(null)
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
       if (!response.ok) throw new Error("Failed to fetch indices")
       const data = await response.json()
       setIndices(data.data || [])
-    } catch (error) {
-      console.error(error)
-      toast({
-        title: t("cluster.indices.error.load_failed.title"),
-        description: t("cluster.indices.error.load_failed.description"),
-        variant: "destructive",
-      })
+    } catch (err) {
+      console.error(err)
+      setError(t("cluster.indices.error.load_failed.description"))
       setIndices([])
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [clusterId, t])
+
+  const handleRetry = useCallback(() => {
+    fetchIndices()
+  }, [fetchIndices])
 
   useEffect(() => {
     fetchIndices()
-  }, [clusterId])
+  }, [fetchIndices])
 
   const isSystemIndex = (indexName: string) => {
     return indexName.startsWith('.') || // 以点开头的索引
@@ -113,8 +114,18 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
     return num.toLocaleString()
   }
 
-  if (loading) {
+  if (loading && !refreshing) {
     return <LoadingSkeleton />
+  }
+
+  if (error && indices.length === 0) {
+    return (
+      <ConnectionErrorState
+        onRetry={handleRetry}
+        retrying={refreshing}
+        variant="card"
+      />
+    )
   }
 
   function goToManageIndices(e: React.MouseEvent): void {

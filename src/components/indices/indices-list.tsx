@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Table,
   TableBody,
@@ -39,6 +39,7 @@ import { Loader2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "@/routing"
 import { useTranslations } from 'next-intl'
+import { ConnectionErrorState } from "@/components/cluster/connection-error-state"
 
 interface IndexStats {
   health: string
@@ -115,12 +116,14 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
   const [loading, setLoading] = useState(true)
   const [showHiddenIndices, setShowHiddenIndices] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
   const t = useTranslations('clusters.list.indices')
 
-  const fetchIndices = async () => {
+  const fetchIndices = useCallback(async () => {
     try {
       setRefreshing(true)
+      setError(null)
       const response = await fetch(`/api/clusters/${clusterId}/indices`)
       if (!response.ok) throw new Error("Failed to fetch indices")
       const data = await response.json()
@@ -129,22 +132,23 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
       } else {
         setIndices([])
       }
-    } catch (error) {
-      toast({
-        title: t('fetch.error'),
-        description: t('fetch.error_description'),
-        variant: "destructive",
-      })
+    } catch (err) {
+      console.error(err)
+      setError(t('fetch.error_description'))
       setIndices([])
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [clusterId, t])
+
+  const handleRetry = useCallback(() => {
+    fetchIndices()
+  }, [fetchIndices])
 
   useEffect(() => {
     fetchIndices()
-  }, [clusterId])
+  }, [fetchIndices])
 
   const getHealthColor = (health: string) => {
     switch (health.toLowerCase()) {
@@ -210,7 +214,7 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
     return showHiddenIndices ? true : !index.index.startsWith('.')
   })
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -253,6 +257,16 @@ export function IndicesList({ clusterId }: { clusterId: string }) {
           </Table>
         </div>
       </div>
+    )
+  }
+
+  if (error && indices.length === 0) {
+    return (
+      <ConnectionErrorState
+        onRetry={handleRetry}
+        retrying={refreshing}
+        variant="full"
+      />
     )
   }
 

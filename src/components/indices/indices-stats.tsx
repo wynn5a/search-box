@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Database, HardDrive, Files, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTranslations } from 'next-intl'
+import { ConnectionErrorGrid } from "@/components/cluster/connection-error-state"
 
 interface IndexStats {
   health: string
@@ -71,6 +72,7 @@ export function IndicesStats({ clusterId }: { clusterId: string }) {
   const [totalDocs, setTotalDocs] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retrying, setRetrying] = useState(false)
   const { toast } = useToast()
   const t = useTranslations('clusters')
 
@@ -142,15 +144,16 @@ export function IndicesStats({ clusterId }: { clusterId: string }) {
     } catch (err) {
       const message = err instanceof Error ? err.message : t('list.test.error')
       setError(message)
-      toast({
-        title: t('list.test.error'),
-        description: t('list.test.error_description'),
-        variant: "destructive",
-      })
     } finally {
       setLoading(false)
+      setRetrying(false)
     }
-  }, [clusterId, toast, t])
+  }, [clusterId, t])
+
+  const handleRetry = useCallback(() => {
+    setRetrying(true)
+    fetchData()
+  }, [fetchData])
 
   useEffect(() => {
     setLoading(true)
@@ -172,10 +175,11 @@ export function IndicesStats({ clusterId }: { clusterId: string }) {
 
   if (error) {
     return (
-      <div className="p-4 bg-destructive/10 text-destructive rounded-md">
-        <p className="font-medium">{t('list.test.error')}</p>
-        <p className="text-sm mt-1">{error}</p>
-      </div>
+      <ConnectionErrorGrid
+        onRetry={handleRetry}
+        retrying={retrying}
+        columns={4}
+      />
     )
   }
 

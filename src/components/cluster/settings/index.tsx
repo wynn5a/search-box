@@ -1,6 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react"
-import { useToast } from "@/hooks/use-toast"
+import React, { useState, useEffect, useCallback } from "react"
 import {
   Tabs,
   TabsList,
@@ -23,6 +22,7 @@ import type { ClusterSettings as ClusterSettingsType, SettingGroup, SettingType 
 import { organizeSettings } from "./utils"
 import { Search, RefreshCw, Database, DatabaseZap, Package } from "lucide-react"
 import cn from "clsx"
+import { ConnectionErrorState } from "../connection-error-state"
 
 interface Props {
   clusterId: string
@@ -30,40 +30,40 @@ interface Props {
 
 export function ClusterSettings({ clusterId }: Props) {
   const t = useTranslations()
-  const { toast } = useToast()
   const [settings, setSettings] = useState<ClusterSettingsType | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedType, setSelectedType] = useState<SettingType>("persistent")
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [retrying, setRetrying] = useState(false)
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch(`/api/clusters/${clusterId}/settings`)
       const data = await response.json()
       if (data.success) {
         setSettings(data.data)
       } else {
-        toast({
-          title: t("cluster.settings.error.load_failed.title"),
-          description: data.error,
-          variant: "destructive"
-        })
+        setError(data.error || t("cluster.settings.error.load_failed.title"))
       }
-    } catch (error) {
-      toast({
-        title: t("cluster.settings.error.load_failed.title"),
-        description: error instanceof Error ? error.message : t("common.error.unknown"),
-        variant: "destructive"
-      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.error.unknown"))
     } finally {
       setLoading(false)
+      setRetrying(false)
     }
-  }
+  }, [clusterId, t])
+
+  const handleRetry = useCallback(() => {
+    setRetrying(true)
+    fetchSettings()
+  }, [fetchSettings])
 
   useEffect(() => {
     fetchSettings()
-  }, [clusterId])
+  }, [fetchSettings])
 
   const renderSettingValue = (value: any) => {
     if (value === null || value === undefined) {
@@ -233,21 +233,29 @@ export function ClusterSettings({ clusterId }: Props) {
       </div>
 
       <div className="flex-1 min-h-0">
-        <ScrollArea className="h-[350px]">
-          <div className="space-y-4 pr-4">
-            {loading ? (
-              <div className="flex items-center justify-center h-40">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : (
-              getSettingsForType(selectedType).map((group, index) => (
-                <div key={index}>
-                  {renderSettingGroup(group)}
+        {error && !settings ? (
+          <ConnectionErrorState
+            onRetry={handleRetry}
+            retrying={retrying}
+            variant="card"
+          />
+        ) : (
+          <ScrollArea className="h-[350px]">
+            <div className="space-y-4 pr-4">
+              {loading && !retrying ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                 </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
+              ) : (
+                getSettingsForType(selectedType).map((group, index) => (
+                  <div key={index}>
+                    {renderSettingGroup(group)}
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        )}
       </div>
     </div>
   )
