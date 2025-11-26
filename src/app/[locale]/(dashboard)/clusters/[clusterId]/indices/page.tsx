@@ -1,6 +1,5 @@
 import { IndicesList } from "@/components/indices/indices-list"
 import { IndicesStats } from "@/components/indices/indices-stats"
-import { ClusterBreadcrumb } from "@/components/cluster/cluster-breadcrumb"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getTranslations } from 'next-intl/server'
 
@@ -10,12 +9,6 @@ export default async function IndicesPage(props: { params: Promise<{ clusterId: 
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-none px-6 py-3 border-b">
-        <ClusterBreadcrumb 
-          clusterId={params.clusterId} 
-          currentPage={t('indices_management')} 
-        />
-      </div>
       <div className="flex-1 p-6 space-y-6 h-full">
         <IndicesStats clusterId={params.clusterId} />
         <Card className="border-none p-0">

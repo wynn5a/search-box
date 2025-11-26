@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+- Use 'nvm use 22' to switch to correct node version

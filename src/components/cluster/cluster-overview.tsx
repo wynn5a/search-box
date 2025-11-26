@@ -72,7 +72,7 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>{t("common.error")}</AlertTitle>
+        <AlertTitle>{t("common.status.error")}</AlertTitle>
         <AlertDescription>{error || t("cluster.overview.error.load_failed")}</AlertDescription>
       </Alert>
     )
@@ -102,7 +102,7 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{t("cluster.overview.status.title")}</CardTitle>
-          <Badge 
+          <Badge
             variant={safeGet(stats, ['health', 'status']) === "green" ? "default" : "destructive"}
             className={cn(
               "capitalize",
@@ -117,7 +117,7 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
             {t("cluster.overview.status.nodes", { count: safeGet(stats, ['health', 'number_of_nodes']) })}
           </div>
           <p className="text-xs text-muted-foreground">
-            {t("cluster.overview.version") + ' ' + safeGet(stats, ['stats', 'nodes', 'versions']) }
+            {t("cluster.overview.version") + ' ' + safeGet(stats, ['stats', 'nodes', 'versions'])}
           </p>
         </CardContent>
       </Card>
@@ -133,8 +133,8 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
           </div>
           {safeGet(stats, ['stats', 'indices', 'docs', 'count']) > 0 && (
             <p className="text-xs text-muted-foreground">
-              {t("cluster.overview.indices.docs", { 
-                count: formatNumber(safeGet(stats, ['stats', 'indices', 'docs', 'count'])) 
+              {t("cluster.overview.indices.docs", {
+                count: formatNumber(safeGet(stats, ['stats', 'indices', 'docs', 'count']))
               })}
             </p>
           )}
@@ -165,18 +165,18 @@ export function ClusterOverview({ clusterId }: ClusterOverviewProps) {
           <div className="text-2xl font-bold">{safeGet(stats, ['health', 'active_shards'])}</div>
           <div className="flex items-center space-x-2 text-xs text-muted-foreground">
             {safeGet(stats, ['health', 'relocating_shards']) > 0 && (
-              <span>{t("cluster.overview.shards.relocating", { 
-                count: safeGet(stats, ['health', 'relocating_shards']) 
+              <span>{t("cluster.overview.shards.relocating", {
+                count: safeGet(stats, ['health', 'relocating_shards'])
               })}</span>
             )}
             {safeGet(stats, ['health', 'initializing_shards']) > 0 && (
-              <span>{t("cluster.overview.shards.initializing", { 
-                count: safeGet(stats, ['health', 'initializing_shards']) 
+              <span>{t("cluster.overview.shards.initializing", {
+                count: safeGet(stats, ['health', 'initializing_shards'])
               })}</span>
             )}
             {safeGet(stats, ['health', 'unassigned_shards']) > 0 && (
-              <span className="text-destructive">{t("cluster.overview.shards.unassigned", { 
-                count: safeGet(stats, ['health', 'unassigned_shards']) 
+              <span className="text-destructive">{t("cluster.overview.shards.unassigned", {
+                count: safeGet(stats, ['health', 'unassigned_shards'])
               })}</span>
             )}
           </div>

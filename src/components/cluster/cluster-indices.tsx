@@ -16,7 +16,7 @@ import { Search, RefreshCw, Cog, ListFilter, User, List } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/routing"
 import {
   Tooltip,
   TooltipContent,

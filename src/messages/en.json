@@ -1,4 +1,17 @@
 {
+  "nav": {
+    "loading": "Loading...",
+    "allClusters": "All Clusters",
+    "selectCluster": "Select Cluster",
+    "searchCluster": "Search clusters...",
+    "noClusterFound": "No cluster found",
+    "clusters": "Clusters",
+    "overview": "Overview",
+    "indices": "Indices",
+    "query": "Query",
+    "addCluster": "Add Cluster",
+    "toggleTheme": "Toggle theme"
+  },
   "common": {
     "language": "Language",
     "theme": "Theme",

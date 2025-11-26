@@ -1,4 +1,17 @@
 {
+  "nav": {
+    "loading": "加载中...",
+    "allClusters": "所有集群",
+    "selectCluster": "选择集群",
+    "searchCluster": "搜索集群...",
+    "noClusterFound": "未找到集群",
+    "clusters": "集群",
+    "overview": "概览",
+    "indices": "索引",
+    "query": "查询",
+    "addCluster": "添加集群",
+    "toggleTheme": "切换主题"
+  },
   "common": {
     "language": "语言",
     "theme": "主题",

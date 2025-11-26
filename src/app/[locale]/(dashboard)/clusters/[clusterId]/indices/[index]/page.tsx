@@ -1,4 +1,3 @@
-import { ClusterBreadcrumb } from "@/components/cluster/cluster-breadcrumb"
 import { IndexMappings } from "@/components/cluster/index-mappings"
 import { IndexOverview } from "@/components/cluster/index-overview"
 import { IndexSettings } from "@/components/cluster/index-settings"
@@ -15,14 +14,7 @@ export default async function IndexPage(props: {
   const t = await getTranslations('index')
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="px-6 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-        <ClusterBreadcrumb
-          indexName={params.index}
-          clusterId={params.clusterId}
-          currentPage={params.index}
-        />
-      </div>
+    <div className="flex flex-col h-[calc(100vh-65px)]">
       <div className="flex-1 p-6 space-y-6">
         <IndexOverview
           clusterId={params.clusterId}

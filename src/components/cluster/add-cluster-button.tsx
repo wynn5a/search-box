@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/routing"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import { AddClusterDialog } from "./add-cluster-dialog"

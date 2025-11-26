@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react"
 import { ClusterCard } from "@/components/cluster/cluster-card"
 import { Button } from "@/components/ui/button"
-import { Database, HardDrive, Activity, RefreshCw, Share2, List } from "lucide-react"
+import { Database, HardDrive, Activity, RefreshCw, Share2 } from "lucide-react"
 import { formatBytes } from "@/lib/utils"
-import { AddClusterButton } from "@/components/cluster/add-cluster-button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import { ApiResponse, ClusterSummary } from "@/types/api"
@@ -21,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import Link from "next/link"
 
 function LoadingState() {
   return (
@@ -221,24 +219,15 @@ function ClusterOverviewContent() {
           <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
           <p className="text-sm text-muted-foreground">{t('description')}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refreshData}
-            disabled={refreshing}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {t('button.refresh')}
-          </Button>
-          <AddClusterButton />
-          <Button variant="outline" size="sm">
-            <Link href="/clusters" className="flex justify-between">
-              <List className="mr-2 h-4 w-4" />
-              {t('manage')}
-            </Link>
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refreshData}
+          disabled={refreshing}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {t('button.refresh')}
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

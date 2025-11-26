@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Loader2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/routing"
 import { useTranslations } from 'next-intl'
 
 interface IndexStats {
