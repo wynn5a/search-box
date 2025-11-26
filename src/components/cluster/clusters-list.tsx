@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { Trash2, RefreshCw, Loader2, Network, Nfc, ChevronDown, ChevronUp } from "lucide-react"
+import { Trash2, RefreshCw, Loader2, Network, Nfc, ChevronDown, ChevronUp, Activity } from "lucide-react"
 import type { ClusterConfig } from "@/types/cluster"
 import { eventBus, EVENTS } from "@/lib/events"
 import { cn } from "@/lib/utils"
@@ -429,7 +429,7 @@ export function ClustersList() {
                             {testingCluster === cluster.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Nfc className="h-4 w-4" />
+                              <Activity className="h-4 w-4" />
                             )}
                           </Button>
                         </TooltipTrigger>

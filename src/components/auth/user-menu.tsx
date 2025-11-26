@@ -22,8 +22,26 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, LogOut } from "lucide-react";
 import { Link } from "@/routing";
+
+/**
+ * Get user initials from name or email
+ */
+function getUserInitials(name?: string | null, email?: string | null): string {
+    if (name) {
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        return name.slice(0, 2).toUpperCase();
+    }
+    if (email) {
+        return email.slice(0, 2).toUpperCase();
+    }
+    return "U";
+}
 
 export function UserMenu() {
     const { data: session, status } = useSession();
@@ -32,9 +50,11 @@ export function UserMenu() {
 
     if (status === "loading") {
         return (
-            <Button variant="ghost" size="icon" disabled>
-                <User className="h-5 w-5" />
-            </Button>
+            <Avatar className="h-8 w-8 cursor-not-allowed opacity-50">
+                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                    ...
+                </AvatarFallback>
+            </Avatar>
         );
     }
 
@@ -48,12 +68,22 @@ export function UserMenu() {
         setShowSignOutDialog(false);
     };
 
+    const initials = getUserInitials(session.user.name, session.user.email);
+
     return (
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <User className="h-5 w-5" />
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage 
+                                src={session.user.image || undefined} 
+                                alt={session.user.name || "User avatar"} 
+                            />
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
+                                {initials}
+                            </AvatarFallback>
+                        </Avatar>
                         <span className="sr-only">User menu</span>
                     </Button>
                 </DropdownMenuTrigger>

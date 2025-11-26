@@ -130,7 +130,7 @@ export function ClusterSelector() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[220px] justify-between"
+          className="h-9 w-[200px] justify-between text-sm"
         >
           {loading && clusters.length === 0 ? (
             <span className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export function ClusterSelector() {
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[220px] p-0">
+      <PopoverContent className="w-[200px] p-0">
         <Command>
           <CommandInput placeholder={t("searchCluster")} />
           <CommandList>

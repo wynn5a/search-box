@@ -1,6 +1,6 @@
 "use client"
 
-import { useLocale, useTranslations } from "next-intl"
+import { useLocale } from "next-intl"
 import { usePathname, useRouter } from "@/routing"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -45,11 +45,9 @@ export function LanguageToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="w-auto px-3 gap-2">
+        <Button variant="ghost" size="icon" className="h-9 w-9">
           <span className="text-base leading-none">{localeInfo.flag}</span>
-          <span className="hidden md:inline-block">
-            {localeInfo.label}
-          </span>
+          <span className="sr-only">{localeInfo.label}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">

@@ -20,7 +20,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const t = useTranslations("nav")
   const [showAddDialog, setShowAddDialog] = useState(false)
-  
+
   const clusterId = params?.clusterId as string | undefined
   const hasClusterSelected = !!clusterId
 
@@ -38,11 +38,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <Link className="flex items-center space-x-2" href="/">
               <span className="font-bold text-lg">Search Box</span>
             </Link>
-            
+
             <div className="h-6 w-px bg-border" />
-            
+
             <ClusterSelector />
-            
+
             {/* Dynamic Navigation - only show when a cluster is selected */}
             {hasClusterSelected && (
               <>
@@ -51,9 +51,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <Link href={`/clusters/${clusterId}`}>
                     <Button
                       variant={isOverviewActive ? "secondary" : "ghost"}
-                      size="sm"
                       className={cn(
-                        "gap-2",
+                        "h-9 px-3 text-sm gap-2",
                         isOverviewActive && "bg-secondary"
                       )}
                     >
@@ -64,9 +63,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <Link href={`/clusters/${clusterId}/indices`}>
                     <Button
                       variant={isIndicesActive ? "secondary" : "ghost"}
-                      size="sm"
                       className={cn(
-                        "gap-2",
+                        "h-9 px-3 text-sm gap-2",
                         isIndicesActive && "bg-secondary"
                       )}
                     >
@@ -77,9 +75,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <Link href={`/clusters/${clusterId}/query`}>
                     <Button
                       variant={isQueryActive ? "secondary" : "ghost"}
-                      size="sm"
                       className={cn(
-                        "gap-2",
+                        "h-9 px-3 text-sm gap-2",
                         isQueryActive && "bg-secondary"
                       )}
                     >
@@ -91,40 +88,40 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </>
             )}
           </div>
-          
+
           {/* Right side: Actions + User Menu */}
           <div className="flex flex-1 items-center justify-end gap-2">
             {!hasClusterSelected && (
               <Button
                 variant="outline"
-                size="sm"
-                className="gap-2"
+                className="h-9 px-3 text-sm gap-2"
                 onClick={() => setShowAddDialog(true)}
               >
                 <Plus className="h-4 w-4" />
                 {t("addCluster")}
               </Button>
             )}
-            <UserMenu />
+            <div className="h-6 w-px bg-border" />
             <LanguageToggle />
             <Button
               variant="ghost"
-              size="icon"
+              className="h-9 w-9"
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
             >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <Sun className="absolute h-5 w-5 scale-0 transition-all dark:scale-100" />
+              <Moon className="absolute h-5 w-5 scale-100 transition-all dark:scale-0" />
               <span className="sr-only">{t("toggleTheme")}</span>
             </Button>
+            <UserMenu />
           </div>
         </div>
       </header>
       <main className="flex-1 container overflow-hidden">
         {children}
       </main>
-      
-      <AddClusterDialog 
-        open={showAddDialog} 
+
+      <AddClusterDialog
+        open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onSuccess={() => {
           setShowAddDialog(false)
