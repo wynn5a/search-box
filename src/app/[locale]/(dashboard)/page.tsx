@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { ClusterCard } from "@/components/cluster/cluster-card"
 import { Button } from "@/components/ui/button"
 import { Database, HardDrive, Activity, RefreshCw, Share2 } from "lucide-react"
@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { eventBus, EVENTS } from "@/lib/events"
 
 function LoadingState() {
   return (
@@ -68,20 +69,6 @@ function ClusterOverviewContent() {
   const [refreshing, setRefreshing] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [healthFilter, setHealthFilter] = useState<HealthFilter>("all")
-
-  async function getClusters(): Promise<ClusterOverview[]> {
-    const response = await fetch("/api/clusters/overview")
-    if (!response.ok) {
-      toast({
-        title: t('error.get_clusters.title'),
-        description: t('error.get_clusters.description'),
-        variant: "destructive",
-      })
-      return []
-    }
-    const data: ApiResponse<ClusterOverview[]> = await response.json()
-    return data.success ? data.data || [] : []
-  }
 
   async function getSummary(clusters: ClusterOverview[]): Promise<ClusterSummary> {
     let totalIndices = 0
@@ -136,27 +123,7 @@ function ClusterOverviewContent() {
     }
   }
 
-  const refreshData = async () => {
-    setRefreshing(true)
-    try {
-      const clustersData = await getClusters()
-      setClusters(clustersData)
-      const summaryData = await getSummary(clustersData)
-      setSummary(summaryData)
-      filterClusters(clustersData, searchTerm, healthFilter)
-    } catch (error) {
-      console.error('Failed to refresh data:', error)
-      toast({
-        title: t('error.refresh.title'),
-        description: t('error.refresh.description'),
-        variant: "destructive",
-      })
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
-  const filterClusters = (clusters: ClusterOverview[], search: string, health: HealthFilter) => {
+  const filterClusters = useCallback((clusters: ClusterOverview[], search: string, health: HealthFilter) => {
     let filtered = clusters
 
     if (search) {
@@ -178,17 +145,74 @@ function ClusterOverviewContent() {
     }
 
     setFilteredClusters(filtered)
-  }
+  }, [])
+
+  const refreshData = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      const response = await fetch("/api/clusters/overview")
+      if (!response.ok) {
+        toast({
+          title: t('error.refresh.title'),
+          description: t('error.refresh.description'),
+          variant: "destructive",
+        })
+        return
+      }
+      const data: ApiResponse<ClusterOverview[]> = await response.json()
+      const clustersData = data.success ? data.data || [] : []
+      setClusters(clustersData)
+      const summaryData = await getSummary(clustersData)
+      setSummary(summaryData)
+      filterClusters(clustersData, searchTerm, healthFilter)
+    } catch (error) {
+      console.error('Failed to refresh data:', error)
+      toast({
+        title: t('error.refresh.title'),
+        description: t('error.refresh.description'),
+        variant: "destructive",
+      })
+    } finally {
+      setRefreshing(false)
+    }
+  }, [toast, t, filterClusters, searchTerm, healthFilter])
 
   useEffect(() => {
     filterClusters(clusters, searchTerm, healthFilter)
-  }, [clusters, searchTerm, healthFilter])
+  }, [clusters, searchTerm, healthFilter, filterClusters])
+
+  // Listen for cluster events to refresh data
+  useEffect(() => {
+    const handleClusterChanged = () => {
+      refreshData()
+    }
+
+    eventBus.on(EVENTS.CLUSTER_ADDED, handleClusterChanged)
+    eventBus.on(EVENTS.CLUSTER_UPDATED, handleClusterChanged)
+    eventBus.on(EVENTS.CLUSTER_DELETED, handleClusterChanged)
+
+    return () => {
+      eventBus.off(EVENTS.CLUSTER_ADDED, handleClusterChanged)
+      eventBus.off(EVENTS.CLUSTER_UPDATED, handleClusterChanged)
+      eventBus.off(EVENTS.CLUSTER_DELETED, handleClusterChanged)
+    }
+  }, [refreshData])
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
       try {
-        const clustersData = await getClusters()
+        const response = await fetch("/api/clusters/overview")
+        if (!response.ok) {
+          toast({
+            title: t('error.get_clusters.title'),
+            description: t('error.get_clusters.description'),
+            variant: "destructive",
+          })
+          return
+        }
+        const data: ApiResponse<ClusterOverview[]> = await response.json()
+        const clustersData = data.success ? data.data || [] : []
         setClusters(clustersData)
         setFilteredClusters(clustersData)
         const summaryData = await getSummary(clustersData)
@@ -206,6 +230,7 @@ function ClusterOverviewContent() {
     }
 
     fetchData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) {

@@ -1,11 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { formatBytes } from "@/lib/utils"
 import { ClusterOverview } from "@/types/cluster"
 import { useTranslations } from "next-intl"
-import { Database, HardDrive, Search, Settings2, List } from "lucide-react"
+import { Database, HardDrive, Search, Settings2, List, Trash2, Loader2 } from "lucide-react"
 import Link from "next/link"
 import {
   Tooltip,
@@ -13,6 +14,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { eventBus, EVENTS } from "@/lib/events"
 
 interface ClusterCardProps {
   cluster: ClusterOverview
@@ -20,6 +33,10 @@ interface ClusterCardProps {
 
 export function ClusterCard({ cluster }: ClusterCardProps) {
   const t = useTranslations('clusters')
+  const tCommon = useTranslations('common')
+  const { toast } = useToast()
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const healthColor = {
     green: "bg-green-500",
     yellow: "bg-yellow-500",
@@ -51,6 +68,32 @@ export function ClusterCard({ cluster }: ClusterCardProps) {
     }
   ]
 
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/clusters/${cluster.id}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) throw new Error("Failed to delete cluster")
+      
+      toast({
+        title: t("list.delete.success"),
+        description: t("list.delete.success_description"),
+      })
+      
+      eventBus.emit(EVENTS.CLUSTER_DELETED)
+    } catch (error) {
+      toast({
+        title: t("list.delete.error"),
+        description: t("list.delete.error_description"),
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+    }
+  }
+
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-md">
       <CardHeader className="border-b p-4 space-y-2">
@@ -74,6 +117,27 @@ export function ClusterCard({ cluster }: ClusterCardProps) {
               </Tooltip>
             </TooltipProvider>
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowDeleteDialog(true)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{tCommon('button.delete')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
       <CardContent className="p-4">
@@ -125,6 +189,36 @@ export function ClusterCard({ cluster }: ClusterCardProps) {
           </Button>
         ))}
       </CardFooter>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("list.delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("list.delete.description", { name: cluster.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              {tCommon("button.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {tCommon("button.delete")}
+                </>
+              ) : (
+                tCommon("button.delete")
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }
