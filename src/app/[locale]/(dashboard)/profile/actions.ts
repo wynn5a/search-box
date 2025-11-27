@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { getTranslations } from "next-intl/server";
 
 // Schema for updating name
 const updateNameSchema = z.object({
@@ -32,10 +33,11 @@ export async function updateName(
     prevState: ActionState,
     formData: FormData
 ): Promise<ActionState> {
+    const t = await getTranslations("profile.updateName");
     const session = await auth();
 
     if (!session?.user?.id) {
-        return { message: "Unauthorized" };
+        return { message: t("unauthorized") };
     }
 
     const validatedFields = updateNameSchema.safeParse({
@@ -45,7 +47,7 @@ export async function updateName(
     if (!validatedFields.success) {
         return {
             errors: validatedFields.error.flatten().fieldErrors,
-            message: "Invalid fields.",
+            message: t("invalidFields"),
         };
     }
 
@@ -55,21 +57,22 @@ export async function updateName(
             data: { name: validatedFields.data.name },
         });
     } catch (error) {
-        return { message: "Database Error: Failed to update name." };
+        return { message: t("error") };
     }
 
     revalidatePath("/[locale]/profile", "page");
-    return { success: true, message: "Name updated successfully." };
+    return { success: true, message: t("success") };
 }
 
 export async function updatePassword(
     prevState: ActionState,
     formData: FormData
 ): Promise<ActionState> {
+    const t = await getTranslations("profile.changePassword");
     const session = await auth();
 
     if (!session?.user?.id) {
-        return { message: "Unauthorized" };
+        return { message: t("error") };
     }
 
     const validatedFields = updatePasswordSchema.safeParse({
@@ -91,15 +94,15 @@ export async function updatePassword(
     });
 
     if (!user || !user.password) {
-        return { message: "User not found." };
+        return { message: t("userNotFound") };
     }
 
     const passwordsMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!passwordsMatch) {
         return {
-            errors: { currentPassword: ["Incorrect password"] },
-            message: "Failed to update password.",
+            errors: { currentPassword: [t("incorrectPassword")] },
+            message: t("error"),
         };
     }
 
@@ -111,9 +114,9 @@ export async function updatePassword(
             data: { password: hashedPassword },
         });
     } catch (error) {
-        return { message: "Database Error: Failed to update password." };
+        return { message: t("error") };
     }
 
     revalidatePath("/[locale]/profile", "page");
-    return { success: true, message: "Password updated successfully." };
+    return { success: true, message: t("success") };
 }

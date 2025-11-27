@@ -30,7 +30,7 @@
       "short_description": "Connection unavailable",
       "retry": "Retry",
       "check_settings": "Check Settings",
-      "hint": "This may be due to network issues, cluster being offline, or incorrect configuration."
+      "hint": "This may be due to network issues, cluster being offline, or incorrect configuration"
     },
     "status": {
       "healthy": "Healthy",
@@ -853,8 +853,53 @@
     "signupLink": "Sign up",
     "loginLink": "Sign in",
     "user": "User",
+    "profile": "Profile",
     "signOutConfirmTitle": "Sign Out",
     "signOutConfirmDescription": "Are you sure you want to sign out?",
     "cancel": "Cancel"
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Manage your account settings and preferences.",
+    "personalInfo": {
+      "title": "Personal Information",
+      "description": "Your basic profile information."
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "password": "Password",
+      "passwordDescription": "Change your password to keep your account secure."
+    },
+    "updateName": {
+      "trigger": "Edit name",
+      "title": "Edit Name",
+      "description": "Update your public display name.",
+      "label": "Name",
+      "placeholder": "Your name",
+      "save": "Save",
+      "success": "Name updated successfully.",
+      "error": "Failed to update name.",
+      "unauthorized": "Unauthorized",
+      "invalidFields": "Invalid fields."
+    },
+    "changePassword": {
+      "trigger": "Change Password",
+      "title": "Change Password",
+      "description": "Enter your current password and a new password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "placeholder": "********",
+      "save": "Change Password",
+      "success": "Password updated successfully",
+      "error": "Failed to update password",
+      "incorrectPassword": "Incorrect password",
+      "userNotFound": "User not found"
+    },
+    "common": {
+      "success": "Success",
+      "error": "Error"
+    }
   }
 }

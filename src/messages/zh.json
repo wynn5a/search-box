@@ -749,8 +749,53 @@
     "signupLink": "注册",
     "loginLink": "登录",
     "user": "用户",
+    "profile": "个人资料",
     "signOutConfirmTitle": "退出登录",
     "signOutConfirmDescription": "您确定要退出登录吗？",
     "cancel": "取消"
+  },
+  "profile": {
+    "title": "个人资料",
+    "description": "管理您的账户设置和偏好",
+    "personalInfo": {
+      "title": "个人信息",
+      "description": "您的基本资料信息"
+    },
+    "fields": {
+      "name": "姓名",
+      "email": "邮箱",
+      "role": "角色",
+      "password": "密码",
+      "passwordDescription": "更改您的密码以保护您的账户安全"
+    },
+    "updateName": {
+      "trigger": "编辑姓名",
+      "title": "编辑姓名",
+      "description": "更新您的公开显示名称",
+      "label": "姓名",
+      "placeholder": "您的姓名",
+      "save": "保存",
+      "success": "姓名更新成功",
+      "error": "更新姓名失败",
+      "unauthorized": "未授权",
+      "invalidFields": "字段无效"
+    },
+    "changePassword": {
+      "trigger": "更改密码",
+      "title": "更改密码",
+      "description": "输入您的当前密码和新密码",
+      "currentPassword": "当前密码",
+      "newPassword": "新密码",
+      "placeholder": "********",
+      "save": "更改密码",
+      "success": "密码更新成功",
+      "error": "更新密码失败",
+      "incorrectPassword": "密码不正确",
+      "userNotFound": "用户未找到"
+    },
+    "common": {
+      "success": "成功",
+      "error": "错误"
+    }
   }
 }

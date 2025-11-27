@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -14,6 +15,7 @@ import { ChangePasswordForm } from "./change-password-form";
 import { Lock } from "lucide-react";
 
 export function ChangePasswordDialog() {
+    const t = useTranslations("profile.changePassword");
     const [open, setOpen] = useState(false);
 
     return (
@@ -21,14 +23,14 @@ export function ChangePasswordDialog() {
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                     <Lock className="mr-2 h-4 w-4" />
-                    Change Password
+                    {t("trigger")}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Change Password</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                     <DialogDescription>
-                        Enter your current password and a new password.
+                        {t("description")}
                     </DialogDescription>
                 </DialogHeader>
                 <ChangePasswordForm onSuccess={() => setOpen(false)} />

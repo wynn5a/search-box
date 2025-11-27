@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -18,6 +19,7 @@ interface UpdateNameDialogProps {
 }
 
 export function UpdateNameDialog({ initialName }: UpdateNameDialogProps) {
+    const t = useTranslations("profile.updateName");
     const [open, setOpen] = useState(false);
 
     return (
@@ -25,14 +27,14 @@ export function UpdateNameDialog({ initialName }: UpdateNameDialogProps) {
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Pencil className="h-4 w-4" />
-                    <span className="sr-only">Edit name</span>
+                    <span className="sr-only">{t("trigger")}</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Edit Name</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                     <DialogDescription>
-                        Update your public display name.
+                        {t("description")}
                     </DialogDescription>
                 </DialogHeader>
                 <UpdateNameForm initialName={initialName} onSuccess={() => setOpen(false)} />

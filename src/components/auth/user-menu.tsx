@@ -76,9 +76,9 @@ export function UserMenu() {
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage 
-                                src={session.user.image || undefined} 
-                                alt={session.user.name || "User avatar"} 
+                            <AvatarImage
+                                src={session.user.image || undefined}
+                                alt={session.user.name || "User avatar"}
                             />
                             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
                                 {initials}
@@ -102,7 +102,7 @@ export function UserMenu() {
                     <DropdownMenuItem asChild>
                         <Link href="/profile" className="cursor-pointer flex items-center">
                             <User className="mr-2 h-4 w-4" />
-                            Profile
+                            {t("profile")}
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { updatePassword, ActionState } from "@/app/[locale]/(dashboard)/profile/actions";
-import { useActionState, useEffect, startTransition } from "react";
+import { useActionState, useEffect, startTransition, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -30,8 +31,11 @@ interface ChangePasswordFormProps {
 }
 
 export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
+    const t = useTranslations("profile.changePassword");
+    const tCommon = useTranslations("profile.common");
     const { toast } = useToast();
     const [state, formAction, isPending] = useActionState(updatePassword, {} as ActionState);
+    const lastStateRef = useRef(state);
 
     const form = useForm<ChangePasswordFormValues>({
         resolver: zodResolver(changePasswordSchema),
@@ -42,10 +46,13 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
     });
 
     useEffect(() => {
+        if (state === lastStateRef.current) return;
+        lastStateRef.current = state;
+
         if (state.message) {
             if (state.success) {
                 toast({
-                    title: "Success",
+                    title: tCommon("success"),
                     description: state.message,
                 });
                 form.reset();
@@ -55,7 +62,7 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
             } else {
                 toast({
                     variant: "destructive",
-                    title: "Error",
+                    title: tCommon("error"),
                     description: state.message,
                 });
             }
@@ -69,17 +76,13 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
                 form.setError("newPassword", { message: state.errors.newPassword[0] });
             }
         }
-    }, [state, toast, form, onSuccess]);
+    }, [state, toast, form, onSuccess, tCommon]);
 
     const onSubmit = async (data: ChangePasswordFormValues) => {
         const formData = new FormData();
         formData.append("currentPassword", data.currentPassword);
         formData.append("newPassword", data.newPassword);
 
-        // Wrap in startTransition to ensure isPending updates correctly if needed, 
-        // though calling formAction directly usually works for server actions.
-        // However, with react-hook-form, we are in an async handler.
-        // Let's just call formAction.
         startTransition(() => {
             formAction(formData);
         });
@@ -93,9 +96,9 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
                     name="currentPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Current Password</FormLabel>
+                            <FormLabel>{t("currentPassword")}</FormLabel>
                             <FormControl>
-                                <Input type="password" placeholder="********" {...field} />
+                                <Input type="password" placeholder={t("placeholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -106,9 +109,9 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
                     name="newPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>New Password</FormLabel>
+                            <FormLabel>{t("newPassword")}</FormLabel>
                             <FormControl>
-                                <Input type="password" placeholder="********" {...field} />
+                                <Input type="password" placeholder={t("placeholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -117,7 +120,7 @@ export function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
                 <div className="flex justify-end">
                     <Button type="submit" disabled={isPending}>
                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Change Password
+                        {t("save")}
                     </Button>
                 </div>
             </form>

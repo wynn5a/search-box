@@ -5,6 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 export default async function ProfilePage({
     params,
@@ -18,12 +20,14 @@ export default async function ProfilePage({
         redirect(`/${locale}/auth/login`);
     }
 
+    const t = await getTranslations("profile");
+
     return (
         <div className="space-y-6 p-10 pb-16 md:block">
             <div className="space-y-0.5">
-                <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
+                <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
                 <p className="text-muted-foreground">
-                    Manage your account settings and preferences.
+                    {t("description")}
                 </p>
             </div>
             <Separator />
@@ -33,33 +37,33 @@ export default async function ProfilePage({
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>Personal Information</CardTitle>
-                                    <CardDescription>Your basic profile information.</CardDescription>
+                                    <CardTitle>{t("personalInfo.title")}</CardTitle>
+                                    <CardDescription>{t("personalInfo.description")}</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid gap-1">
-                                <Label className="text-muted-foreground">Name</Label>
+                                <Label className="text-muted-foreground">{t("fields.name")}</Label>
                                 <div className="flex items-center justify-between">
                                     <div className="font-medium">{session.user.name}</div>
                                     <UpdateNameDialog initialName={session.user.name || ""} />
                                 </div>
                             </div>
                             <div className="grid gap-1">
-                                <Label className="text-muted-foreground">Email</Label>
+                                <Label className="text-muted-foreground">{t("fields.email")}</Label>
                                 <div className="font-medium">{session.user.email}</div>
                             </div>
                             <div className="grid gap-1">
-                                <Label className="text-muted-foreground">Role</Label>
+                                <Label className="text-muted-foreground">{t("fields.role")}</Label>
                                 <div className="font-medium">{session.user.role}</div>
                             </div>
                             <Separator />
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <Label className="text-base">Password</Label>
+                                    <Label className="text-base">{t("fields.password")}</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        Change your password to keep your account secure.
+                                        {t("fields.passwordDescription")}
                                     </p>
                                 </div>
                                 <ChangePasswordDialog />

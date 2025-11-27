@@ -14,9 +14,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { updateName, ActionState } from "@/app/[locale]/(dashboard)/profile/actions";
-import { useActionState, useEffect, useState, startTransition } from "react";
+import { useActionState, useEffect, useState, startTransition, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 const updateNameSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -30,9 +32,12 @@ interface UpdateNameFormProps {
 }
 
 export function UpdateNameForm({ initialName, onSuccess }: UpdateNameFormProps) {
+    const t = useTranslations("profile.updateName");
+    const tCommon = useTranslations("profile.common");
     const { toast } = useToast();
+    const { update } = useSession();
     const [state, formAction, isPending] = useActionState(updateName, {} as ActionState);
-    // const [isPending, setIsPending] = useState(false); // useActionState provides isPending
+    const lastStateRef = useRef(state);
 
     const form = useForm<UpdateNameFormValues>({
         resolver: zodResolver(updateNameSchema),
@@ -42,29 +47,33 @@ export function UpdateNameForm({ initialName, onSuccess }: UpdateNameFormProps) 
     });
 
     useEffect(() => {
+        if (state === lastStateRef.current) return;
+        lastStateRef.current = state;
+
         if (state.message) {
             if (state.success) {
                 toast({
-                    title: "Success",
+                    title: tCommon("success"),
                     description: state.message,
                 });
+                // Update the session to reflect the new name immediately
+                update();
                 if (onSuccess) {
                     onSuccess();
                 }
             } else {
                 toast({
                     variant: "destructive",
-                    title: "Error",
+                    title: tCommon("error"),
                     description: state.message,
                 });
             }
-            // setIsPending(false); // Handled by useActionState
         }
 
         if (state.errors?.name) {
             form.setError("name", { message: state.errors.name[0] });
         }
-    }, [state, toast, form, onSuccess]);
+    }, [state, toast, form, onSuccess, update, tCommon]);
 
     const onSubmit = async (data: UpdateNameFormValues) => {
         const formData = new FormData();
@@ -82,9 +91,9 @@ export function UpdateNameForm({ initialName, onSuccess }: UpdateNameFormProps) 
                     name="name"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Name</FormLabel>
+                            <FormLabel>{t("label")}</FormLabel>
                             <FormControl>
-                                <Input placeholder="Your name" {...field} />
+                                <Input placeholder={t("placeholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -93,7 +102,7 @@ export function UpdateNameForm({ initialName, onSuccess }: UpdateNameFormProps) 
                 <div className="flex justify-end">
                     <Button type="submit" disabled={isPending}>
                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save
+                        {t("save")}
                     </Button>
                 </div>
             </form>
