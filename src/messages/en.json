@@ -860,7 +860,7 @@
   },
   "profile": {
     "title": "Profile",
-    "description": "Manage your account settings and preferences.",
+    "description": "Manage your account settings and preferences",
     "personalInfo": {
       "title": "Personal Information",
       "description": "Your basic profile information."
@@ -870,19 +870,19 @@
       "email": "Email",
       "role": "Role",
       "password": "Password",
-      "passwordDescription": "Change your password to keep your account secure."
+      "passwordDescription": "Change your password to keep your account secure"
     },
     "updateName": {
       "trigger": "Edit name",
       "title": "Edit Name",
-      "description": "Update your public display name.",
+      "description": "Update your public display name",
       "label": "Name",
       "placeholder": "Your name",
       "save": "Save",
-      "success": "Name updated successfully.",
-      "error": "Failed to update name.",
+      "success": "Name updated successfully",
+      "error": "Failed to update name",
       "unauthorized": "Unauthorized",
-      "invalidFields": "Invalid fields."
+      "invalidFields": "Invalid fields"
     },
     "changePassword": {
       "trigger": "Change Password",
