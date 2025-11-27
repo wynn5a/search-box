@@ -115,7 +115,51 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
   }
 
   if (loading && !refreshing) {
-    return <LoadingSkeleton />
+    return (
+      <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-10 w-[300px]" />
+            <Skeleton className="h-10 w-[300px]" />
+          </div>
+          <div className="flex space-x-2">
+            <Skeleton className="h-9 w-[100px]" />
+            <Skeleton className="h-9 w-[100px]" />
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 border rounded overflow-auto">
+          <ScrollArea className="h-[350px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px] text-center sticky top-0 bg-background">
+                    {t("cluster.indices.table.health")}
+                  </TableHead>
+                  <TableHead className="sticky top-0 bg-background">
+                    {t("cluster.indices.table.name")}
+                  </TableHead>
+                  <TableHead className="text-right sticky top-0 bg-background">
+                    {t("cluster.indices.table.docs")}
+                  </TableHead>
+                  <TableHead className="text-right sticky top-0 bg-background">
+                    {t("cluster.indices.table.size")}
+                  </TableHead>
+                  <TableHead className="text-right sticky top-0 bg-background">
+                    {t("cluster.indices.table.status")}
+                  </TableHead>
+                  <TableHead className="text-right sticky top-0 bg-background">
+                    {t("cluster.indices.table.shards")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <LoadingSkeleton />
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
+      </div>
+    )
   }
 
   if (error && indices.length === 0) {
@@ -130,7 +174,7 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
 
   function goToManageIndices(e: React.MouseEvent): void {
     e.preventDefault();
-    router.push(`/clusters/${clusterId}/indices`);  
+    router.push(`/clusters/${clusterId}/indices`);
   }
 
   return (
@@ -267,21 +311,29 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between">
-        <Skeleton className="h-10 w-[200px]" />
-        <div className="flex space-x-2">
-          <Skeleton className="h-10 w-[300px]" />
-          <Skeleton className="h-10 w-[100px]" />
-        </div>
-      </div>
-      <div className="border rounded-lg">
-        <div className="space-y-2 p-4">
-          {Array(5).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
-      </div>
-    </div>
+    <>
+      {Array(5).fill(0).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell className="text-center">
+            <Skeleton className="h-2 w-2 rounded-full mx-auto" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-[200px]" />
+          </TableCell>
+          <TableCell className="text-right">
+            <Skeleton className="h-4 w-[60px] ml-auto" />
+          </TableCell>
+          <TableCell className="text-right">
+            <Skeleton className="h-4 w-[60px] ml-auto" />
+          </TableCell>
+          <TableCell className="text-right">
+            <Skeleton className="h-4 w-[60px] ml-auto" />
+          </TableCell>
+          <TableCell className="text-right">
+            <Skeleton className="h-4 w-[60px] ml-auto" />
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
   )
 }
