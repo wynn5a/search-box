@@ -128,7 +128,7 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
           </div>
         </div>
         <div className="flex-1 min-h-0 border rounded overflow-auto">
-          <ScrollArea className="h-[350px]">
+          <ScrollArea className="h-[calc(100vh-380px)]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -233,7 +233,7 @@ export function ClusterIndices({ clusterId }: ClusterIndicesProps) {
       </div>
 
       <div className="flex-1 min-h-0 border rounded overflow-auto">
-        <ScrollArea className="h-[350px]">
+        <ScrollArea className="h-[calc(100vh-380px)]">
           <Table>
             <TableHeader>
               <TableRow>
